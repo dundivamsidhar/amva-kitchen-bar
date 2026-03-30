@@ -66,6 +66,53 @@ export type Database = {
           spice_level?: number | null;
         };
       };
+      orders: {
+        Row: {
+          id: string;
+          table_number: number;
+          customer_name: string | null;
+          status: "new" | "acknowledged" | "preparing" | "ready" | "served" | "cancelled";
+          notes: string | null;
+          total: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          table_number: number;
+          customer_name?: string | null;
+          status?: "new" | "acknowledged" | "preparing" | "ready" | "served" | "cancelled";
+          notes?: string | null;
+          total: number;
+        };
+        Update: {
+          status?: "new" | "acknowledged" | "preparing" | "ready" | "served" | "cancelled";
+          notes?: string | null;
+        };
+      };
+      order_items: {
+        Row: {
+          id: number;
+          order_id: string;
+          menu_item_id: number;
+          menu_item_name: string;
+          menu_item_price: number;
+          quantity: number;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          order_id: string;
+          menu_item_id: number;
+          menu_item_name: string;
+          menu_item_price: number;
+          quantity: number;
+          notes?: string | null;
+        };
+        Update: {
+          quantity?: number;
+          notes?: string | null;
+        };
+      };
       reservations: {
         Row: {
           id: number;
