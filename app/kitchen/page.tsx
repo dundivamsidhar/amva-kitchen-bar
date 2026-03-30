@@ -161,7 +161,7 @@ export default function KitchenPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"active" | "all">("active");
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchOrders = useCallback(async () => {
     const statuses = view === "active" ? ACTIVE_STATUSES : ALL_STATUSES;
@@ -173,7 +173,7 @@ export default function KitchenPage() {
 
     if (!error && data) {
       setOrders(data as Order[]);
-      setLastUpdated(new Date());
+      setLastUpdated(new Date()); // client-only, safe after mount
     }
     setLoading(false);
   }, [view]);
@@ -250,9 +250,11 @@ export default function KitchenPage() {
             <button onClick={fetchOrders} className="text-white/30 hover:text-white transition-colors" title="Refresh">
               <RefreshCw className="w-4 h-4" />
             </button>
-            <span className="text-white/20 text-xs hidden sm:block">
-              Updated {lastUpdated.toLocaleTimeString()}
-            </span>
+            {lastUpdated && (
+              <span className="text-white/20 text-xs hidden sm:block" suppressHydrationWarning>
+                Updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
           </div>
         </div>
       </div>
