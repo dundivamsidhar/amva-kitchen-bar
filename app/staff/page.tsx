@@ -559,7 +559,9 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
             { id: "payslips", label: "Payslips", icon: FileText },
             { id: "leave", label: "Leave", icon: ClipboardList, badge: pendingLeaves },
             { id: "profile", label: "Profile", icon: User },
-          ] as const).map(({ id, label, icon: Icon, badge }) => (
+          ] as const).map(({ id, label, icon: Icon, ...rest }) => {
+            const badge = "badge" in rest ? (rest as { badge: number }).badge : 0;
+            return (
             <button
               key={id}
               onClick={() => setTab(id as typeof tab)}
@@ -577,7 +579,8 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
                 </span>
               ) : null}
             </button>
-          ))}
+          );
+          })}
         </div>
 
         {loading ? (
