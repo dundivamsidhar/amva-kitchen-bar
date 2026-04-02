@@ -59,15 +59,36 @@ const MONTH_NAMES = [
 
 const STAFF_SESSION_KEY = "amva_staff_id";
 
+const DEPARTMENTS = ["Kitchen", "Bar", "Front of House", "Management", "Housekeeping", "Accounts", "Delivery", "Other"];
+
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+
+  // Sign-in state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Sign-up state
+  const [suFullName, setSuFullName] = useState("");
+  const [suEmpCode, setSuEmpCode] = useState("");
+  const [suRole, setSuRole] = useState("");
+  const [suDept, setSuDept] = useState(DEPARTMENTS[0]);
+  const [suEmail, setSuEmail] = useState("");
+  const [suPassword, setSuPassword] = useState("");
+  const [suPhone, setSuPhone] = useState("");
+  const [suJoining, setSuJoining] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function switchMode(m: "signin" | "signup") {
+    setMode(m);
+    setError("");
+  }
+
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!email || !password) { setError("Please enter your email and password."); return; }
@@ -90,55 +111,172 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
     setLoading(false);
   }
 
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!suFullName.trim()) { setError("Full name is required."); return; }
+    if (!suEmpCode.trim()) { setError("Employee code is required."); return; }
+    if (!suRole.trim()) { setError("Role / job title is required."); return; }
+    if (!suEmail.trim()) { setError("Email is required."); return; }
+    if (!suPassword) { setError("Password is required."); return; }
+    if (suPassword.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+    setLoading(true);
+
+    // Check for duplicate employee code
+    const { data: existing } = await (supabase as any)
+      .from("employees")
+      .select("id")
+      .eq("employee_code", suEmpCode.trim().toUpperCase())
+      .single();
+
+    if (existing) {
+      setError("That employee code is already taken. Please contact your manager.");
+      setLoading(false);
+      return;
+    }
+
+    const newEmployee = {
+      full_name: suFullName.trim(),
+      employee_code: suEmpCode.trim().toUpperCase(),
+      role: suRole.trim(),
+      department: suDept,
+      email: suEmail.trim().toLowerCase(),
+      password: suPassword,
+      phone: suPhone.trim() || null,
+      joining_date: suJoining || null,
+      is_active: true,
+    };
+
+    const { data, error: insertErr } = await (supabase as any)
+      .from("employees")
+      .insert([newEmployee])
+      .select()
+      .single();
+
+    if (insertErr || !data) {
+      setError("Could not create account. Email may already be registered.");
+      setLoading(false);
+      return;
+    }
+
+    localStorage.setItem(STAFF_SESSION_KEY, data.id);
+    onLogin(data as Employee);
+    setLoading(false);
+  }
+
+  const inputCls = "w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-3 px-4 outline-none focus:border-brand-gold transition-colors";
+  const labelCls = "text-white/40 text-xs font-bold tracking-widest uppercase";
+
   return (
-    <div className="min-h-screen bg-[#0d0a04] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0d0a04] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center gap-5 mb-10">
+        {/* Header */}
+        <div className="flex flex-col items-center gap-5 mb-8">
           <div className="w-14 h-14 bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center">
             <User className="w-7 h-7 text-brand-gold" />
           </div>
           <div className="text-center">
             <p className="text-white/40 text-xs tracking-widest uppercase mb-1">AmVa Kitchen & Bar</p>
             <h1 className="font-display text-2xl font-bold text-white">Staff Portal</h1>
-            <p className="text-white/40 text-sm mt-1">Sign in to view your payslips & updates</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/40 text-xs font-bold tracking-widest uppercase">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@amvakitchen.in"
-              autoFocus
-              className="w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-3 px-4 outline-none focus:border-brand-gold transition-colors"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-white/40 text-xs font-bold tracking-widest uppercase">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-3 px-4 outline-none focus:border-brand-gold transition-colors"
-            />
-          </div>
-          {error && <p className="text-red-400 text-xs">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50"
-          >
-            {loading ? "Signing in…" : "Sign In"}
-          </button>
-        </form>
+        {/* Mode toggle */}
+        <div className="flex border border-white/10 mb-6">
+          {(["signin", "signup"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => switchMode(m)}
+              className={`flex-1 py-2.5 text-xs font-bold tracking-widest uppercase transition-colors ${
+                mode === m
+                  ? "bg-brand-gold text-brand-black"
+                  : "text-white/40 hover:text-white"
+              }`}
+            >
+              {m === "signin" ? "Sign In" : "Sign Up"}
+            </button>
+          ))}
+        </div>
 
-        <p className="text-white/20 text-xs text-center mt-6">
-          Forgot your password? Contact your manager.
-        </p>
+        {mode === "signin" ? (
+          <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@amvakitchen.in" autoFocus className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" className={inputCls} />
+            </div>
+            {error && <p className="text-red-400 text-xs">{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
+              {loading ? "Signing in…" : "Sign In"}
+            </button>
+            <p className="text-white/20 text-xs text-center">Forgot your password? Contact your manager.</p>
+          </form>
+        ) : (
+          <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Full Name *</label>
+              <input type="text" value={suFullName} onChange={(e) => setSuFullName(e.target.value)}
+                placeholder="Rahul Sharma" autoFocus className={inputCls} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Emp. Code *</label>
+                <input type="text" value={suEmpCode} onChange={(e) => setSuEmpCode(e.target.value)}
+                  placeholder="EMP001" className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Department *</label>
+                <select value={suDept} onChange={(e) => setSuDept(e.target.value)}
+                  className={inputCls + " appearance-none"}>
+                  {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Role / Job Title *</label>
+              <input type="text" value={suRole} onChange={(e) => setSuRole(e.target.value)}
+                placeholder="Head Chef, Bartender, Waiter…" className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Email *</label>
+              <input type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)}
+                placeholder="you@amvakitchen.in" className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Password *</label>
+              <input type="password" value={suPassword} onChange={(e) => setSuPassword(e.target.value)}
+                placeholder="Min. 6 characters" className={inputCls} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Phone</label>
+                <input type="tel" value={suPhone} onChange={(e) => setSuPhone(e.target.value)}
+                  placeholder="+91 98765…" className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Joining Date</label>
+                <input type="date" value={suJoining} onChange={(e) => setSuJoining(e.target.value)}
+                  className={inputCls + " [color-scheme:dark]"} />
+              </div>
+            </div>
+            {error && <p className="text-red-400 text-xs">{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
+              {loading ? "Creating account…" : "Create Account"}
+            </button>
+            <p className="text-white/20 text-xs text-center">Already have an account?{" "}
+              <button type="button" onClick={() => switchMode("signin")} className="text-brand-gold hover:underline">Sign in</button>
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );
