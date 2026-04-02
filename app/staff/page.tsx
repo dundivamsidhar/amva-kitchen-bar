@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   User,
@@ -25,6 +25,9 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Timer,
+  LogIn,
+  History,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,6 +64,13 @@ interface CompanyUpdate {
   content: string;
   is_pinned: boolean;
   posted_at: string;
+}
+
+interface AttendanceRecord {
+  id: string;
+  date: string;
+  clock_in: string;
+  clock_out: string | null;
 }
 
 interface LeaveRequest {
@@ -401,6 +411,157 @@ function PayslipCard({ slip }: { slip: Payslip }) {
   );
 }
 
+// ─── Time Clock Widget ────────────────────────────────────────────────────────
+
+function fmt(ms: number) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function TimeClock({ employeeId }: { employeeId: string }) {
+  const [record, setRecord] = useState<AttendanceRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await (supabase as any)
+        .from("attendance")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .eq("date", today)
+        .order("clock_in", { ascending: false })
+        .limit(1)
+        .single();
+      setRecord(data ?? null);
+      setLoading(false);
+    }
+    load();
+  }, [employeeId]);
+
+  useEffect(() => {
+    if (record && !record.clock_out) {
+      const start = new Date(record.clock_in).getTime();
+      timerRef.current = setInterval(() => setElapsed(Date.now() - start), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (record?.clock_in && record?.clock_out) {
+        setElapsed(new Date(record.clock_out).getTime() - new Date(record.clock_in).getTime());
+      }
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [record]);
+
+  async function clockIn() {
+    setBusy(true);
+    const today = new Date().toISOString().slice(0, 10);
+    const { data } = await (supabase as any)
+      .from("attendance")
+      .insert([{ employee_id: employeeId, date: today }])
+      .select()
+      .single();
+    if (data) setRecord(data as AttendanceRecord);
+    setBusy(false);
+  }
+
+  async function clockOut() {
+    if (!record) return;
+    setBusy(true);
+    const now = new Date().toISOString();
+    const { data } = await (supabase as any)
+      .from("attendance")
+      .update({ clock_out: now })
+      .eq("id", record.id)
+      .select()
+      .single();
+    if (data) setRecord(data as AttendanceRecord);
+    setBusy(false);
+  }
+
+  const isClockedIn = !!record && !record.clock_out;
+  const isClockedOut = !!record && !!record.clock_out;
+
+  return (
+    <div className={`border p-5 flex flex-col gap-4 ${isClockedIn ? "border-green-500/30 bg-green-500/5" : isClockedOut ? "border-white/10 bg-white/[0.02]" : "border-white/10 bg-white/[0.02]"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Timer className={`w-4 h-4 ${isClockedIn ? "text-green-400" : "text-white/40"}`} />
+          <p className="text-white/40 text-xs font-bold tracking-widest uppercase">Time Clock</p>
+        </div>
+        {isClockedIn && (
+          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-green-400 bg-green-400/10 border border-green-400/20 px-2 py-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            On Shift
+          </span>
+        )}
+        {isClockedOut && (
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/30 border border-white/10 px-2 py-1">Shift Ended</span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="h-10 bg-white/5 animate-pulse" />
+      ) : (
+        <>
+          {(isClockedIn || isClockedOut) && (
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-white/30 text-[10px] uppercase tracking-widest">Clock In</p>
+                <p className="text-white font-semibold text-sm">
+                  {new Date(record!.clock_in).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                </p>
+              </div>
+              {isClockedOut && (
+                <div>
+                  <p className="text-white/30 text-[10px] uppercase tracking-widest">Clock Out</p>
+                  <p className="text-white font-semibold text-sm">
+                    {new Date(record!.clock_out!).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-white/30 text-[10px] uppercase tracking-widest">{isClockedIn ? "Duration" : "Total"}</p>
+                <p className={`font-display text-lg font-bold ${isClockedIn ? "text-green-400" : "text-white"}`}>
+                  {fmt(elapsed)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!record && (
+            <p className="text-white/30 text-sm">You haven&apos;t clocked in today.</p>
+          )}
+
+          <div className="flex gap-3">
+            {!record && (
+              <button onClick={clockIn} disabled={busy}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-400 text-black font-bold text-xs tracking-widest uppercase transition-colors disabled:opacity-50">
+                <LogIn className="w-4 h-4" /> {busy ? "Clocking in…" : "Clock In"}
+              </button>
+            )}
+            {isClockedIn && (
+              <button onClick={clockOut} disabled={busy}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 font-bold text-xs tracking-widest uppercase transition-colors disabled:opacity-50">
+                <LogOut className="w-4 h-4" /> {busy ? "Clocking out…" : "Clock Out"}
+              </button>
+            )}
+            {isClockedOut && (
+              <p className="text-white/30 text-xs text-center w-full py-2">
+                Shift complete. See you next time!
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Employee; onLogout: () => void }) {
@@ -408,8 +569,9 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [updates, setUpdates] = useState<CompanyUpdate[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"updates" | "payslips" | "leave" | "profile">("updates");
+  const [tab, setTab] = useState<"updates" | "payslips" | "leave" | "attendance" | "profile">("updates");
 
   // Leave form state
   const [leaveType, setLeaveType] = useState<LeaveRequest["leave_type"]>("casual");
@@ -427,17 +589,20 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
 
   useEffect(() => {
     async function loadAll() {
-      const [{ data: slips }, { data: upds }, { data: lvs }] = await Promise.all([
+      const [{ data: slips }, { data: upds }, { data: lvs }, { data: att }] = await Promise.all([
         (supabase as any).from("payslips").select("*").eq("employee_id", employee.id)
           .order("year", { ascending: false }).order("month", { ascending: false }),
         (supabase as any).from("company_updates").select("*")
           .order("is_pinned", { ascending: false }).order("posted_at", { ascending: false }),
         (supabase as any).from("leave_requests").select("*").eq("employee_id", employee.id)
           .order("created_at", { ascending: false }),
+        (supabase as any).from("attendance").select("*").eq("employee_id", employee.id)
+          .order("date", { ascending: false }).limit(30),
       ]);
       if (slips) setPayslips(slips as Payslip[]);
       if (upds) setUpdates(upds as CompanyUpdate[]);
       if (lvs) setLeaves(lvs as LeaveRequest[]);
+      if (att) setAttendanceHistory(att as AttendanceRecord[]);
       setLoading(false);
     }
     loadAll();
@@ -519,6 +684,9 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
+        {/* Time Clock */}
+        <TimeClock employeeId={employee.id} />
+
         {/* Welcome + summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-2 border border-white/10 bg-white/[0.02] p-5">
@@ -558,6 +726,7 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
             { id: "updates", label: "Updates", icon: Megaphone },
             { id: "payslips", label: "Payslips", icon: FileText },
             { id: "leave", label: "Leave", icon: ClipboardList, badge: pendingLeaves },
+            { id: "attendance", label: "Attendance", icon: History },
             { id: "profile", label: "Profile", icon: User },
           ] as const).map(({ id, label, icon: Icon, ...rest }) => {
             const badge = "badge" in rest ? (rest as { badge: number }).badge : 0;
@@ -710,6 +879,46 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
                           <span className="text-brand-gold/70">Manager note:</span> {l.admin_note}
                         </p>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+        ) : tab === "attendance" ? (
+          /* ── Attendance History ── */
+          <div className="flex flex-col gap-4">
+            <p className="text-white/40 text-xs font-bold tracking-widest uppercase">Attendance History (Last 30 Days)</p>
+            {attendanceHistory.length === 0 ? (
+              <p className="text-white/30 text-sm py-8 text-center">No attendance records yet.</p>
+            ) : (
+              <div className="border border-white/10 divide-y divide-white/5">
+                {/* Header */}
+                <div className="grid grid-cols-4 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white/25">
+                  <span>Date</span><span>Clock In</span><span>Clock Out</span><span>Duration</span>
+                </div>
+                {attendanceHistory.map((a) => {
+                  const inMs = new Date(a.clock_in).getTime();
+                  const outMs = a.clock_out ? new Date(a.clock_out).getTime() : null;
+                  const durMs = outMs ? outMs - inMs : null;
+                  const isToday = a.date === new Date().toISOString().slice(0, 10);
+                  return (
+                    <div key={a.id} className={`grid grid-cols-4 px-4 py-3 text-sm items-center ${isToday ? "bg-brand-gold/5" : ""}`}>
+                      <span className={`font-medium ${isToday ? "text-brand-gold" : "text-white"}`}>
+                        {isToday ? "Today" : new Date(a.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </span>
+                      <span className="text-white/70">
+                        {new Date(a.clock_in).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                      </span>
+                      <span className={a.clock_out ? "text-white/70" : "text-yellow-400 text-xs font-bold uppercase tracking-wide"}>
+                        {a.clock_out
+                          ? new Date(a.clock_out).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+                          : "Active"}
+                      </span>
+                      <span className={durMs ? "text-white/70" : "text-white/30"}>
+                        {durMs ? fmt(durMs) : "—"}
+                      </span>
                     </div>
                   );
                 })}
