@@ -1,31 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Flame, Leaf, Search, Plus, Check } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { MenuItem, MenuCategory } from "@/lib/database.types";
 import { useCart } from "@/lib/CartContext";
 import toast from "react-hot-toast";
-
-const IMAGE_FALLBACKS: Record<string, string> = {
-  starters:
-    "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80",
-  "sharing-plates":
-    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
-  mains:
-    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80",
-  "biryani-rice":
-    "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&q=80",
-  desserts:
-    "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=600&q=80",
-  cocktails:
-    "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
-  mocktails:
-    "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&q=80",
-  "wines-spirits":
-    "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&q=80",
-};
 
 // ── Static fallback data (shown when Supabase is not connected) ──────────────
 const STATIC_CATEGORIES: MenuCategory[] = [
@@ -41,57 +21,57 @@ const STATIC_CATEGORIES: MenuCategory[] = [
 
 const STATIC_ITEMS: MenuItem[] = [
   // Starters (category_id: 1)
-  { id: 1, category_id: 1, name: "Hyderabadi Galouti Kebab", description: "Melt-in-your-mouth minced lamb patties with saffron & rose petal chutney", price: 495, image_url: null, tags: ["chef-special", "gluten-free"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 1, created_at: "" },
-  { id: 2, category_id: 1, name: "Paneer Tikka 65", description: "Chargrilled cottage cheese in smoky spiced marinade, mint yoghurt dip", price: 395, image_url: null, tags: ["vegetarian", "chef-special"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 3, category_id: 1, name: "Crispy Lotus Stems", description: "Flash-fried lotus root, chilli-lime salt, tamarind glaze", price: 345, image_url: null, tags: ["vegan", "gluten-free"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 1, created_at: "" },
-  { id: 4, category_id: 1, name: "Prawn Koliwada", description: "Mumbai-style battered prawns, kokum mayo, curry leaf oil", price: 545, image_url: null, tags: ["seafood"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 5, category_id: 1, name: "Dal Shorba", description: "Velvet lentil broth, smoked butter, crispy shallots", price: 225, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
+  { id: 1, category_id: 1, name: "Hyderabadi Galouti Kebab", description: "Melt-in-your-mouth minced lamb patties with saffron & rose petal chutney", price: 495, image_url: null, tags: ["chef-special", "gluten-free"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 2, category_id: 1, name: "Paneer Tikka 65", description: "Chargrilled cottage cheese in smoky spiced marinade, mint yoghurt dip", price: 395, image_url: null, tags: ["vegetarian", "chef-special"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 3, category_id: 1, name: "Crispy Lotus Stems", description: "Flash-fried lotus root, chilli-lime salt, tamarind glaze", price: 345, image_url: null, tags: ["vegan", "gluten-free"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 4, category_id: 1, name: "Prawn Koliwada", description: "Mumbai-style battered prawns, kokum mayo, curry leaf oil", price: 545, image_url: null, tags: ["seafood"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 5, category_id: 1, name: "Dal Shorba", description: "Velvet lentil broth, smoked butter, crispy shallots", price: 225, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
 
   // Sharing Plates (category_id: 2)
-  { id: 6, category_id: 2, name: "Mezze of the Deccan", description: "Baingan bharta, walnut chutney, pomegranate raita, mini naan basket", price: 695, image_url: null, tags: ["vegetarian", "sharing"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, created_at: "" },
-  { id: 7, category_id: 2, name: "Chaat Board", description: "Pani puri, sev puri, dahi vada, papdi chaat — street food all on one board", price: 595, image_url: null, tags: ["vegetarian", "street-food"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 1, created_at: "" },
-  { id: 8, category_id: 2, name: "Mixed Grill Platter", description: "Tandoori chicken, seekh kebab, fish tikka, lamb chops, green chutney & pickles", price: 1295, image_url: null, tags: ["mixed", "tandoor"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
+  { id: 6, category_id: 2, name: "Mezze of the Deccan", description: "Baingan bharta, walnut chutney, pomegranate raita, mini naan basket", price: 695, image_url: null, tags: ["vegetarian", "sharing"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 7, category_id: 2, name: "Chaat Board", description: "Pani puri, sev puri, dahi vada, papdi chaat — street food all on one board", price: 595, image_url: null, tags: ["vegetarian", "street-food"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 8, category_id: 2, name: "Mixed Grill Platter", description: "Tandoori chicken, seekh kebab, fish tikka, lamb chops, green chutney & pickles", price: 1295, image_url: null, tags: ["mixed", "tandoor"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
 
   // Mains (category_id: 3)
-  { id: 9, category_id: 3, name: "Dum Ka Gosht", description: "Slow-cooked Hyderabadi lamb curry, caramelised onion, stone-flower spice", price: 695, image_url: null, tags: ["signature", "gluten-free"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 10, category_id: 3, name: "Butter Chicken — AmVa Style", description: "Tandoor-roasted chicken in smoked tomato & fenugreek sauce, finishing butter", price: 595, image_url: null, tags: ["bestseller"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 1, created_at: "" },
-  { id: 11, category_id: 3, name: "Coastal Prawn Masala", description: "Konkan-style tiger prawns, raw mango, coconut milk curry, appam", price: 745, image_url: null, tags: ["seafood", "gluten-free"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 3, created_at: "" },
-  { id: 12, category_id: 3, name: "Wild Mushroom & Truffle Kofta", description: "Handmade mushroom dumplings in makhani sauce, truffle oil finish", price: 545, image_url: null, tags: ["vegetarian", "chef-special"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, created_at: "" },
-  { id: 13, category_id: 3, name: "Raan-e-Deccan", description: "Whole slow-roasted lamb shoulder (serves 2–3), pomegranate jus, roomali roti", price: 1895, image_url: null, tags: ["sharing", "signature", "pre-order"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 14, category_id: 3, name: "Paneer Lababdar", description: "Rich tomato-cashew gravy, chargrilled cottage cheese, fresh cream", price: 495, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, created_at: "" },
+  { id: 9, category_id: 3, name: "Dum Ka Gosht", description: "Slow-cooked Hyderabadi lamb curry, caramelised onion, stone-flower spice", price: 695, image_url: null, tags: ["signature", "gluten-free"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 10, category_id: 3, name: "Butter Chicken — AmVa Style", description: "Tandoor-roasted chicken in smoked tomato & fenugreek sauce, finishing butter", price: 595, image_url: null, tags: ["bestseller"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 11, category_id: 3, name: "Coastal Prawn Masala", description: "Konkan-style tiger prawns, raw mango, coconut milk curry, appam", price: 745, image_url: null, tags: ["seafood", "gluten-free"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 3, is_special_today: false, special_note: null, created_at: "" },
+  { id: 12, category_id: 3, name: "Wild Mushroom & Truffle Kofta", description: "Handmade mushroom dumplings in makhani sauce, truffle oil finish", price: 545, image_url: null, tags: ["vegetarian", "chef-special"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 13, category_id: 3, name: "Raan-e-Deccan", description: "Whole slow-roasted lamb shoulder (serves 2–3), pomegranate jus, roomali roti", price: 1895, image_url: null, tags: ["sharing", "signature", "pre-order"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 14, category_id: 3, name: "Paneer Lababdar", description: "Rich tomato-cashew gravy, chargrilled cottage cheese, fresh cream", price: 495, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
 
   // Biryani & Rice (category_id: 4)
-  { id: 15, category_id: 4, name: "Hyderabadi Dum Biryani — Mutton", description: "The original — aged basmati, whole spices, slow-steamed in sealed handi", price: 695, image_url: null, tags: ["signature", "bestseller"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 16, category_id: 4, name: "Hyderabadi Dum Biryani — Chicken", description: "Classic kachchi method, caramelised onion, mint, saffron", price: 595, image_url: null, tags: ["signature", "bestseller"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 17, category_id: 4, name: "Veg Dum Biryani", description: "Garden vegetables, paneer, saffron, dry fruits, dum sealed", price: 495, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, created_at: "" },
-  { id: 18, category_id: 4, name: "Prawn Dum Biryani", description: "Tiger prawns, coastal spices, coconut, fresh coriander", price: 795, image_url: null, tags: ["seafood", "signature"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 2, created_at: "" },
-  { id: 19, category_id: 4, name: "Jeera Rice", description: "Basmati rice tempered with cumin, ghee & fresh herbs", price: 175, image_url: null, tags: ["vegetarian", "side"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
+  { id: 15, category_id: 4, name: "Hyderabadi Dum Biryani — Mutton", description: "The original — aged basmati, whole spices, slow-steamed in sealed handi", price: 695, image_url: null, tags: ["signature", "bestseller"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 16, category_id: 4, name: "Hyderabadi Dum Biryani — Chicken", description: "Classic kachchi method, caramelised onion, mint, saffron", price: 595, image_url: null, tags: ["signature", "bestseller"], is_available: true, is_featured: true, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 17, category_id: 4, name: "Veg Dum Biryani", description: "Garden vegetables, paneer, saffron, dry fruits, dum sealed", price: 495, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 18, category_id: 4, name: "Prawn Dum Biryani", description: "Tiger prawns, coastal spices, coconut, fresh coriander", price: 795, image_url: null, tags: ["seafood", "signature"], is_available: true, is_featured: false, is_vegetarian: false, is_vegan: false, spice_level: 2, is_special_today: false, special_note: null, created_at: "" },
+  { id: 19, category_id: 4, name: "Jeera Rice", description: "Basmati rice tempered with cumin, ghee & fresh herbs", price: 175, image_url: null, tags: ["vegetarian", "side"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
 
   // Desserts (category_id: 5)
-  { id: 20, category_id: 5, name: "Double Ka Meetha", description: "Hyderabadi bread pudding, rose water, pistachios, silver leaf", price: 295, image_url: null, tags: ["signature", "vegetarian"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 21, category_id: 5, name: "Gulab Jamun Cheesecake", description: "Cardamom cream cheese, gulab jamun insert, rose coulis", price: 345, image_url: null, tags: ["fusion", "vegetarian"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 22, category_id: 5, name: "Kulfi on a Stick", description: "Pistachio & rose, mango & chilli, or malai — choose your flavour", price: 225, image_url: null, tags: ["vegetarian", "gluten-free"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 23, category_id: 5, name: "Warm Chocolate Fondant", description: "Dark chocolate lava cake, saffron ice cream, gold leaf", price: 375, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
+  { id: 20, category_id: 5, name: "Double Ka Meetha", description: "Hyderabadi bread pudding, rose water, pistachios, silver leaf", price: 295, image_url: null, tags: ["signature", "vegetarian"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 21, category_id: 5, name: "Gulab Jamun Cheesecake", description: "Cardamom cream cheese, gulab jamun insert, rose coulis", price: 345, image_url: null, tags: ["fusion", "vegetarian"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 22, category_id: 5, name: "Kulfi on a Stick", description: "Pistachio & rose, mango & chilli, or malai — choose your flavour", price: 225, image_url: null, tags: ["vegetarian", "gluten-free"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 23, category_id: 5, name: "Warm Chocolate Fondant", description: "Dark chocolate lava cake, saffron ice cream, gold leaf", price: 375, image_url: null, tags: ["vegetarian"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
 
   // Cocktails (category_id: 6)
-  { id: 24, category_id: 6, name: "AmVa Sour", description: "Maker's Mark bourbon, fresh tamarind, curry leaf syrup, egg white, smoked chilli rim", price: 695, image_url: null, tags: ["signature", "bestseller"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 25, category_id: 6, name: "Hyderabad Negroni", description: "Empress 1908 gin, Campari, cardamom-infused vermouth, charred orange", price: 745, image_url: null, tags: ["signature"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 26, category_id: 6, name: "Mango Lassi Margarita", description: "Patrón Silver, Alphonso mango, saffron sugar, Tajín rim", price: 695, image_url: null, tags: ["seasonal", "fusion"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 27, category_id: 6, name: "Masala Chai Old Fashioned", description: "Woodford Reserve, spiced chai reduction, Angostura bitters, star anise smoke", price: 745, image_url: null, tags: ["signature", "chef-special"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 28, category_id: 6, name: "Rose Garden", description: "Hendrick's gin, lychee, rose water, St-Germain, elderflower foam", price: 695, image_url: null, tags: ["floral"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 29, category_id: 6, name: "Kokum Daiquiri", description: "Havana Club 3yr, kokum shrub, cane syrup, lime, activated charcoal salt", price: 645, image_url: null, tags: ["tropical"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
+  { id: 24, category_id: 6, name: "AmVa Sour", description: "Maker's Mark bourbon, fresh tamarind, curry leaf syrup, egg white, smoked chilli rim", price: 695, image_url: null, tags: ["signature", "bestseller"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 25, category_id: 6, name: "Hyderabad Negroni", description: "Empress 1908 gin, Campari, cardamom-infused vermouth, charred orange", price: 745, image_url: null, tags: ["signature"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 26, category_id: 6, name: "Mango Lassi Margarita", description: "Patrón Silver, Alphonso mango, saffron sugar, Tajín rim", price: 695, image_url: null, tags: ["seasonal", "fusion"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 27, category_id: 6, name: "Masala Chai Old Fashioned", description: "Woodford Reserve, spiced chai reduction, Angostura bitters, star anise smoke", price: 745, image_url: null, tags: ["signature", "chef-special"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 28, category_id: 6, name: "Rose Garden", description: "Hendrick's gin, lychee, rose water, St-Germain, elderflower foam", price: 695, image_url: null, tags: ["floral"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 29, category_id: 6, name: "Kokum Daiquiri", description: "Havana Club 3yr, kokum shrub, cane syrup, lime, activated charcoal salt", price: 645, image_url: null, tags: ["tropical"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
 
   // Mocktails (category_id: 7)
-  { id: 30, category_id: 7, name: "Virgin AmVa Sour", description: "Tamarind, curry leaf soda, ginger, lime, egg white foam", price: 395, image_url: null, tags: ["signature", "non-alcoholic"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: true, spice_level: 0, created_at: "" },
-  { id: 31, category_id: 7, name: "Spiced Watermelon Cooler", description: "Fresh watermelon, jalapeño, mint, black salt, soda", price: 345, image_url: null, tags: ["refreshing", "non-alcoholic"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 1, created_at: "" },
-  { id: 32, category_id: 7, name: "Turmeric Ginger Fizz", description: "Cold-pressed turmeric, ginger, lemon, honey, ginger beer", price: 345, image_url: null, tags: ["wellness", "non-alcoholic"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 0, created_at: "" },
-  { id: 33, category_id: 7, name: "Mango Chilli Lemonade", description: "Alphonso mango purée, chilli, basil, lemon, sparkling water", price: 345, image_url: null, tags: ["tropical", "non-alcoholic"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 1, created_at: "" },
+  { id: 30, category_id: 7, name: "Virgin AmVa Sour", description: "Tamarind, curry leaf soda, ginger, lime, egg white foam", price: 395, image_url: null, tags: ["signature", "non-alcoholic"], is_available: true, is_featured: true, is_vegetarian: true, is_vegan: true, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 31, category_id: 7, name: "Spiced Watermelon Cooler", description: "Fresh watermelon, jalapeño, mint, black salt, soda", price: 345, image_url: null, tags: ["refreshing", "non-alcoholic"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
+  { id: 32, category_id: 7, name: "Turmeric Ginger Fizz", description: "Cold-pressed turmeric, ginger, lemon, honey, ginger beer", price: 345, image_url: null, tags: ["wellness", "non-alcoholic"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 33, category_id: 7, name: "Mango Chilli Lemonade", description: "Alphonso mango purée, chilli, basil, lemon, sparkling water", price: 345, image_url: null, tags: ["tropical", "non-alcoholic"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: true, spice_level: 1, is_special_today: false, special_note: null, created_at: "" },
 
   // Wines & Spirits (category_id: 8)
-  { id: 34, category_id: 8, name: "Sula Vineyards Rasa Cabernet Sauvignon", description: "Rich blackberry, spice finish — Nashik Valley", price: 595, image_url: null, tags: ["indian-wine", "red"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 35, category_id: 8, name: "Grover Zampa Chardonnay", description: "Crisp citrus, light oak — Nandi Hills", price: 545, image_url: null, tags: ["indian-wine", "white"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 36, category_id: 8, name: "Kingfisher Ultra Draught", description: "330ml | Chilled & fresh", price: 250, image_url: null, tags: ["beer"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
-  { id: 37, category_id: 8, name: "Jack Daniel's — House Pour", description: "30ml | Tennessee whiskey", price: 450, image_url: null, tags: ["spirits"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, created_at: "" },
+  { id: 34, category_id: 8, name: "Sula Vineyards Rasa Cabernet Sauvignon", description: "Rich blackberry, spice finish — Nashik Valley", price: 595, image_url: null, tags: ["indian-wine", "red"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 35, category_id: 8, name: "Grover Zampa Chardonnay", description: "Crisp citrus, light oak — Nandi Hills", price: 545, image_url: null, tags: ["indian-wine", "white"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 36, category_id: 8, name: "Kingfisher Ultra Draught", description: "330ml | Chilled & fresh", price: 250, image_url: null, tags: ["beer"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
+  { id: 37, category_id: 8, name: "Jack Daniel's — House Pour", description: "30ml | Tennessee whiskey", price: 450, image_url: null, tags: ["spirits"], is_available: true, is_featured: false, is_vegetarian: true, is_vegan: false, spice_level: 0, is_special_today: false, special_note: null, created_at: "" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,8 +90,7 @@ function SpiceLevel({ level }: { level: number | null }) {
   );
 }
 
-function MenuItemRow({ item, categorySlug }: { item: MenuItem; categorySlug: string }) {
-  const imgSrc = item.image_url || IMAGE_FALLBACKS[categorySlug] || IMAGE_FALLBACKS["mains"];
+function MenuItemRow({ item }: { item: MenuItem; categorySlug: string }) {
   const { addToCart, cart } = useCart();
   const [added, setAdded] = useState(false);
   const inCart = cart.find((c) => c.item.id === item.id);
@@ -124,59 +103,57 @@ function MenuItemRow({ item, categorySlug }: { item: MenuItem; categorySlug: str
   }
 
   return (
-    <div className="group flex gap-5 py-6 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors px-2 -mx-2">
-      <div className="relative w-20 h-20 shrink-0 overflow-hidden">
-        <Image
-          src={imgSrc}
-          alt={item.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-          sizes="80px"
-        />
-      </div>
-      <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-        <div className="flex items-start gap-2 justify-between">
-          <h3 className="font-display text-base font-bold text-white leading-tight">
-            {item.name}
-          </h3>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-brand-gold font-bold text-base">₹{item.price}</span>
-            <button
-              onClick={handleAdd}
-              className={`w-7 h-7 flex items-center justify-center border transition-all duration-200 ${
-                added
-                  ? "border-green-500 bg-green-500/20 text-green-400"
-                  : "border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-black"
-              }`}
-              title="Add to order"
-            >
-              {added ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            </button>
+    <div className="group py-5 border-b border-white/5 last:border-0 hover:bg-white/[0.025] transition-colors px-3 -mx-3">
+      <div className="flex items-start gap-3 justify-between">
+        {/* Left: name + description */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-display text-base font-bold text-white leading-tight">
+              {item.name}
+            </h3>
+            {item.is_vegetarian && (
+              <div className="flex items-center gap-1 text-green-400 shrink-0">
+                <Leaf className="w-3 h-3" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">
+                  {item.is_vegan ? "Vegan" : "Veg"}
+                </span>
+              </div>
+            )}
+          </div>
+          {item.description && (
+            <p className="text-white/40 text-sm leading-relaxed mt-1 line-clamp-2">
+              {item.description}
+            </p>
+          )}
+          <div className="flex items-center gap-2.5 mt-2 flex-wrap">
+            <SpiceLevel level={item.spice_level} />
+            {item.tags?.slice(0, 2).map((tag) => (
+              <span key={tag} className="text-[9px] font-bold tracking-widest uppercase text-brand-gold/40 border border-brand-gold/15 px-1.5 py-0.5">
+                {tag.replace(/-/g, " ")}
+              </span>
+            ))}
+            {inCart && (
+              <span className="text-[9px] font-bold tracking-widest uppercase text-brand-gold bg-brand-gold/10 border border-brand-gold/30 px-1.5 py-0.5">
+                {inCart.quantity} in order
+              </span>
+            )}
           </div>
         </div>
-        {item.description && (
-          <p className="text-white/40 text-sm leading-relaxed line-clamp-2">{item.description}</p>
-        )}
-        <div className="flex items-center gap-3 mt-1 flex-wrap">
-          <SpiceLevel level={item.spice_level} />
-          {item.is_vegetarian && (
-            <div className="flex items-center gap-1 text-green-400">
-              <Leaf className="w-3 h-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                {item.is_vegan ? "Vegan" : "Veg"}
-              </span>
-            </div>
-          )}
-          {item.tags?.slice(0, 2).map((tag) => (
-            <span key={tag} className="text-[10px] font-bold tracking-widest uppercase text-brand-gold/50 border border-brand-gold/20 px-1.5 py-0.5">
-              {tag.replace("-", " ")}
-            </span>
-          ))}
-          {inCart && (
-            <span className="text-[10px] font-bold tracking-widest uppercase text-brand-gold bg-brand-gold/10 border border-brand-gold/30 px-1.5 py-0.5">
-              {inCart.quantity} in order
-            </span>
-          )}
+
+        {/* Right: price + add button */}
+        <div className="flex items-center gap-3 shrink-0 pl-4">
+          <span className="text-brand-gold font-display font-bold text-lg">₹{item.price}</span>
+          <button
+            onClick={handleAdd}
+            className={`w-8 h-8 flex items-center justify-center border transition-all duration-200 ${
+              added
+                ? "border-green-500 bg-green-500/20 text-green-400"
+                : "border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-black"
+            }`}
+            title="Add to order"
+          >
+            {added ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          </button>
         </div>
       </div>
     </div>
