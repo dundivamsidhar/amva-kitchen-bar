@@ -112,9 +112,10 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
   const [suPhone, setSuPhone] = useState("");
   const [suJoining, setSuJoining] = useState("");
 
-  // Reset password state
+  // Reset password state — step 1: email, step 2: verify code, step 3: new password
+  const [rpStep, setRpStep] = useState<1 | 2 | 3>(1);
   const [rpEmail, setRpEmail] = useState("");
-  const [rpEmpCode, setRpEmpCode] = useState("");
+  const [rpCode, setRpCode] = useState("");
   const [rpNewPw, setRpNewPw] = useState("");
   const [rpConfirm, setRpConfirm] = useState("");
   const [rpSuccess, setRpSuccess] = useState(false);
@@ -126,6 +127,8 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
     setMode(m);
     setError("");
     setRpSuccess(false);
+    setRpStep(1);
+    setRpEmail(""); setRpCode(""); setRpNewPw(""); setRpConfirm("");
   }
 
   async function handleSignIn(e: React.FormEvent) {
@@ -205,44 +208,87 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
     setLoading(false);
   }
 
-  async function handleReset(e: React.FormEvent) {
+  // Step 1: send code to email
+  async function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!rpEmail.trim()) { setError("Please enter your email."); return; }
-    if (!rpEmpCode.trim()) { setError("Please enter your employee code."); return; }
+    setLoading(true);
+    const res = await fetch("/api/send-reset-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: rpEmail.trim().toLowerCase() }),
+    });
+    if (!res.ok) {
+      setError("Failed to send code. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setRpStep(2);
+    setLoading(false);
+  }
+
+  // Step 2: verify the code
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!rpCode.trim()) { setError("Please enter the verification code."); return; }
+    setLoading(true);
+    const { data } = await (supabase as any)
+      .from("password_resets")
+      .select("id")
+      .eq("email", rpEmail.trim().toLowerCase())
+      .eq("code", rpCode.trim())
+      .eq("used", false)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!data) {
+      setError("Invalid or expired code. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setRpStep(3);
+    setLoading(false);
+  }
+
+  // Step 3: set new password
+  async function handleSetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
     if (!rpNewPw) { setError("Please enter a new password."); return; }
     if (rpNewPw.length < 6) { setError("Password must be at least 6 characters."); return; }
     if (rpNewPw !== rpConfirm) { setError("Passwords do not match."); return; }
     setLoading(true);
 
-    // Verify identity: email + employee code must match
     const { data: emp } = await (supabase as any)
       .from("employees")
       .select("id")
       .eq("email", rpEmail.trim().toLowerCase())
-      .eq("employee_code", rpEmpCode.trim().toUpperCase())
       .eq("is_active", true)
       .single();
 
     if (!emp) {
-      setError("No matching account found. Check your email and employee code.");
+      setError("Account not found. Please start over.");
       setLoading(false);
       return;
     }
 
-    const { error: updateErr } = await (supabase as any)
+    await (supabase as any)
       .from("employees")
       .update({ password: rpNewPw })
       .eq("id", emp.id);
 
-    if (updateErr) {
-      setError("Failed to reset password. Please try again.");
-      setLoading(false);
-      return;
-    }
+    // Mark code as used
+    await (supabase as any)
+      .from("password_resets")
+      .update({ used: true })
+      .eq("email", rpEmail.trim().toLowerCase())
+      .eq("code", rpCode.trim());
 
     setRpSuccess(true);
-    setRpEmail(""); setRpEmpCode(""); setRpNewPw(""); setRpConfirm("");
     setLoading(false);
   }
 
@@ -308,43 +354,87 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
 
         ) : mode === "reset" ? (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center justify-between mb-2">
               <button type="button" onClick={() => switchMode("signin")}
                 className="text-white/30 hover:text-white transition-colors text-xs">← Back to Sign In</button>
               <p className="text-white font-semibold text-sm">Reset Password</p>
-            </div>
-            {rpSuccess ? (
-              <div className="border border-green-500/30 bg-green-500/10 p-4 text-center flex flex-col gap-3">
-                <p className="text-green-400 font-semibold text-sm">Password reset successfully!</p>
-                <button type="button" onClick={() => switchMode("signin")}
-                  className="text-xs text-brand-gold underline underline-offset-2">Back to Sign In</button>
+              {/* Step indicator */}
+              <div className="flex items-center gap-1">
+                {([1,2,3] as const).map((s) => (
+                  <div key={s} className={`w-5 h-1 rounded-full ${rpStep >= s ? "bg-brand-gold" : "bg-white/10"}`} />
+                ))}
               </div>
-            ) : (
-              <form onSubmit={handleReset} className="flex flex-col gap-4">
+            </div>
+
+            {rpSuccess ? (
+              <div className="border border-green-500/30 bg-green-500/10 p-5 text-center flex flex-col gap-3">
+                <p className="text-green-400 font-bold text-sm">Password reset successfully!</p>
+                <p className="text-white/40 text-xs">You can now sign in with your new password.</p>
+                <button type="button" onClick={() => switchMode("signin")}
+                  className="text-xs text-brand-gold underline underline-offset-2">Go to Sign In</button>
+              </div>
+
+            ) : rpStep === 1 ? (
+              <form onSubmit={handleSendCode} className="flex flex-col gap-4">
+                <p className="text-white/40 text-xs">Enter your registered email address. We&apos;ll send a 6-digit verification code.</p>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelCls}>Email</label>
+                  <label className={labelCls}>Email Address</label>
                   <input type="email" value={rpEmail} onChange={(e) => setRpEmail(e.target.value)}
                     placeholder="you@amvakitchen.in" autoFocus className={inputCls} />
                 </div>
+                {error && <p className="text-red-400 text-xs">{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
+                  {loading ? "Sending code…" : "Send Verification Code"}
+                </button>
+              </form>
+
+            ) : rpStep === 2 ? (
+              <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
+                <p className="text-white/40 text-xs">
+                  A 6-digit code was sent to <span className="text-white/70">{rpEmail}</span>. Enter it below. Valid for 15 minutes.
+                </p>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelCls}>Employee Code</label>
-                  <input type="text" value={rpEmpCode} onChange={(e) => setRpEmpCode(e.target.value)}
-                    placeholder="EMP001" className={inputCls} />
+                  <label className={labelCls}>Verification Code</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={rpCode}
+                    onChange={(e) => setRpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="_ _ _ _ _ _"
+                    autoFocus
+                    className={inputCls + " text-center text-2xl tracking-[0.5em] font-bold"}
+                  />
                 </div>
+                {error && <p className="text-red-400 text-xs">{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
+                  {loading ? "Verifying…" : "Verify Code"}
+                </button>
+                <button type="button" onClick={handleSendCode} disabled={loading}
+                  className="text-white/30 hover:text-white/60 text-xs text-center transition-colors">
+                  Didn&apos;t receive it? Resend code
+                </button>
+              </form>
+
+            ) : (
+              <form onSubmit={handleSetPassword} className="flex flex-col gap-4">
+                <p className="text-white/40 text-xs">Code verified. Set your new password.</p>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelCls}>New Password</label>
                   <input type="password" value={rpNewPw} onChange={(e) => setRpNewPw(e.target.value)}
-                    placeholder="Min. 6 characters" className={inputCls} />
+                    placeholder="Min. 6 characters" autoFocus className={inputCls} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className={labelCls}>Confirm Password</label>
+                  <label className={labelCls}>Confirm New Password</label>
                   <input type="password" value={rpConfirm} onChange={(e) => setRpConfirm(e.target.value)}
                     placeholder="Re-enter new password" className={inputCls} />
                 </div>
                 {error && <p className="text-red-400 text-xs">{error}</p>}
                 <button type="submit" disabled={loading}
                   className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
-                  {loading ? "Resetting…" : "Reset Password"}
+                  {loading ? "Saving…" : "Set New Password"}
                 </button>
               </form>
             )}
