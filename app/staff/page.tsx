@@ -14,6 +14,17 @@ import {
   CalendarDays,
   BadgeCheck,
   TrendingDown,
+  ClipboardList,
+  Phone,
+  Mail,
+  Building2,
+  Pencil,
+  Check,
+  X,
+  PlusCircle,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,6 +61,17 @@ interface CompanyUpdate {
   content: string;
   is_pinned: boolean;
   posted_at: string;
+}
+
+interface LeaveRequest {
+  id: string;
+  leave_type: "sick" | "casual" | "annual" | "other";
+  from_date: string;
+  to_date: string;
+  reason: string | null;
+  status: "pending" | "approved" | "rejected";
+  admin_note: string | null;
+  created_at: string;
 }
 
 const MONTH_NAMES = [
@@ -381,35 +403,94 @@ function PayslipCard({ slip }: { slip: Payslip }) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-function StaffDashboard({ employee, onLogout }: { employee: Employee; onLogout: () => void }) {
+function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Employee; onLogout: () => void }) {
+  const [employee, setEmployee] = useState<Employee>(initialEmployee);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [updates, setUpdates] = useState<CompanyUpdate[]>([]);
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"updates" | "payslips">("updates");
+  const [tab, setTab] = useState<"updates" | "payslips" | "leave" | "profile">("updates");
+
+  // Leave form state
+  const [leaveType, setLeaveType] = useState<LeaveRequest["leave_type"]>("casual");
+  const [leaveFrom, setLeaveFrom] = useState("");
+  const [leaveTo, setLeaveTo] = useState("");
+  const [leaveReason, setLeaveReason] = useState("");
+  const [leaveSubmitting, setLeaveSubmitting] = useState(false);
+  const [leaveMsg, setLeaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
+
+  // Profile edit state
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneVal, setPhoneVal] = useState(employee.phone ?? "");
+  const [phoneSaving, setPhoneSaving] = useState(false);
 
   useEffect(() => {
-    async function fetch() {
-      const [{ data: slips }, { data: upds }] = await Promise.all([
-        (supabase as any)
-          .from("payslips")
-          .select("*")
-          .eq("employee_id", employee.id)
-          .order("year", { ascending: false })
-          .order("month", { ascending: false }),
-        (supabase as any)
-          .from("company_updates")
-          .select("*")
-          .order("is_pinned", { ascending: false })
-          .order("posted_at", { ascending: false }),
+    async function loadAll() {
+      const [{ data: slips }, { data: upds }, { data: lvs }] = await Promise.all([
+        (supabase as any).from("payslips").select("*").eq("employee_id", employee.id)
+          .order("year", { ascending: false }).order("month", { ascending: false }),
+        (supabase as any).from("company_updates").select("*")
+          .order("is_pinned", { ascending: false }).order("posted_at", { ascending: false }),
+        (supabase as any).from("leave_requests").select("*").eq("employee_id", employee.id)
+          .order("created_at", { ascending: false }),
       ]);
       if (slips) setPayslips(slips as Payslip[]);
       if (upds) setUpdates(upds as CompanyUpdate[]);
+      if (lvs) setLeaves(lvs as LeaveRequest[]);
       setLoading(false);
     }
-    fetch();
+    loadAll();
   }, [employee.id]);
 
+  async function submitLeave(e: React.FormEvent) {
+    e.preventDefault();
+    setLeaveMsg(null);
+    if (!leaveFrom || !leaveTo) { setLeaveMsg({ ok: false, text: "Please select both dates." }); return; }
+    if (leaveTo < leaveFrom) { setLeaveMsg({ ok: false, text: "End date must be after start date." }); return; }
+    setLeaveSubmitting(true);
+    const { data, error } = await (supabase as any).from("leave_requests").insert([{
+      employee_id: employee.id,
+      leave_type: leaveType,
+      from_date: leaveFrom,
+      to_date: leaveTo,
+      reason: leaveReason.trim() || null,
+    }]).select().single();
+    if (error || !data) {
+      setLeaveMsg({ ok: false, text: "Failed to submit. Please try again." });
+    } else {
+      setLeaves((prev) => [data as LeaveRequest, ...prev]);
+      setLeaveMsg({ ok: true, text: "Leave request submitted successfully." });
+      setLeaveFrom(""); setLeaveTo(""); setLeaveReason(""); setLeaveType("casual");
+      setShowLeaveForm(false);
+    }
+    setLeaveSubmitting(false);
+  }
+
+  async function savePhone() {
+    setPhoneSaving(true);
+    const { error } = await (supabase as any).from("employees").update({ phone: phoneVal.trim() || null }).eq("id", employee.id);
+    if (!error) {
+      setEmployee((e) => ({ ...e, phone: phoneVal.trim() || null }));
+      setEditingPhone(false);
+    }
+    setPhoneSaving(false);
+  }
+
   const latestSlip = payslips[0];
+  const pendingLeaves = leaves.filter((l) => l.status === "pending").length;
+
+  const LEAVE_LABEL: Record<LeaveRequest["leave_type"], string> = {
+    sick: "Sick Leave", casual: "Casual Leave", annual: "Annual Leave", other: "Other",
+  };
+  const STATUS_STYLE: Record<LeaveRequest["status"], string> = {
+    pending: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
+    approved: "text-green-400 bg-green-400/10 border-green-400/20",
+    rejected: "text-red-400 bg-red-400/10 border-red-400/20",
+  };
+  const STATUS_ICON = { pending: Clock, approved: CheckCircle2, rejected: XCircle };
+
+  const inputCls = "w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-2.5 px-3 outline-none focus:border-brand-gold transition-colors text-sm";
 
   return (
     <div className="min-h-screen bg-[#0d0a04]">
@@ -429,9 +510,10 @@ function StaffDashboard({ employee, onLogout }: { employee: Employee; onLogout: 
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white/30 hover:text-red-400 border border-white/10 hover:border-red-500/30 px-3 py-2 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 hover:border-red-500/60 px-3 py-2 transition-colors"
           >
-            <LogOut className="w-3.5 h-3.5" /> Sign Out
+            <LogOut className="w-3.5 h-3.5 text-red-400" />
+            <span className="text-red-400">Sign Out</span>
           </button>
         </div>
       </div>
@@ -471,22 +553,29 @@ function StaffDashboard({ employee, onLogout }: { employee: Employee; onLogout: 
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-white/10">
+        <div className="flex flex-wrap border-b border-white/10 gap-x-1">
           {([
-            { id: "updates", label: "Company Updates", icon: Megaphone },
-            { id: "payslips", label: "My Payslips", icon: FileText },
-          ] as const).map(({ id, label, icon: Icon }) => (
+            { id: "updates", label: "Updates", icon: Megaphone },
+            { id: "payslips", label: "Payslips", icon: FileText },
+            { id: "leave", label: "Leave", icon: ClipboardList, badge: pendingLeaves },
+            { id: "profile", label: "Profile", icon: User },
+          ] as const).map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
-              onClick={() => setTab(id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors -mb-px ${
+              onClick={() => setTab(id as typeof tab)}
+              className={`relative flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-colors -mb-px ${
                 tab === id
                   ? "border-brand-gold text-brand-gold"
                   : "border-transparent text-white/30 hover:text-white"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               {label}
+              {badge ? (
+                <span className="w-4 h-4 bg-yellow-400 text-black text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {badge}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -496,19 +585,13 @@ function StaffDashboard({ employee, onLogout }: { employee: Employee; onLogout: 
             {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-white/5 animate-pulse" />)}
           </div>
         ) : tab === "updates" ? (
+          /* ── Company Updates ── */
           <div className="flex flex-col gap-4">
             {updates.length === 0 && (
               <p className="text-white/30 text-sm py-8 text-center">No updates posted yet.</p>
             )}
             {updates.map((u) => (
-              <div
-                key={u.id}
-                className={`border p-5 flex flex-col gap-3 ${
-                  u.is_pinned
-                    ? "border-brand-gold/30 bg-brand-gold/5"
-                    : "border-white/10 bg-white/[0.02]"
-                }`}
-              >
+              <div key={u.id} className={`border p-5 flex flex-col gap-3 ${u.is_pinned ? "border-brand-gold/30 bg-brand-gold/5" : "border-white/10 bg-white/[0.02]"}`}>
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-white font-bold text-base leading-snug">{u.title}</h3>
                   {u.is_pinned && (
@@ -524,7 +607,9 @@ function StaffDashboard({ employee, onLogout }: { employee: Employee; onLogout: 
               </div>
             ))}
           </div>
-        ) : (
+
+        ) : tab === "payslips" ? (
+          /* ── My Payslips ── */
           <div className="flex flex-col gap-3">
             {payslips.length === 0 && (
               <p className="text-white/30 text-sm py-8 text-center">No payslips available yet.</p>
@@ -536,6 +621,163 @@ function StaffDashboard({ employee, onLogout }: { employee: Employee; onLogout: 
             {payslips.map((slip) => (
               <PayslipCard key={slip.id} slip={slip} />
             ))}
+          </div>
+
+        ) : tab === "leave" ? (
+          /* ── Leave Requests ── */
+          <div className="flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <p className="text-white/40 text-xs font-bold tracking-widest uppercase">Leave Requests</p>
+              <button
+                onClick={() => { setShowLeaveForm((v) => !v); setLeaveMsg(null); }}
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-gold border border-brand-gold/30 hover:border-brand-gold/60 px-3 py-2 transition-colors"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                {showLeaveForm ? "Cancel" : "Apply Leave"}
+              </button>
+            </div>
+
+            {showLeaveForm && (
+              <form onSubmit={submitLeave} className="border border-white/10 bg-white/[0.02] p-5 flex flex-col gap-4">
+                <p className="text-white font-semibold text-sm">New Leave Application</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-white/40 text-[10px] font-bold tracking-widest uppercase">Leave Type</label>
+                    <select value={leaveType} onChange={(e) => setLeaveType(e.target.value as LeaveRequest["leave_type"])}
+                      className={inputCls + " appearance-none"}>
+                      <option value="casual">Casual Leave</option>
+                      <option value="sick">Sick Leave</option>
+                      <option value="annual">Annual Leave</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-white/40 text-[10px] font-bold tracking-widest uppercase">From</label>
+                    <input type="date" value={leaveFrom} onChange={(e) => setLeaveFrom(e.target.value)}
+                      className={inputCls + " [color-scheme:dark]"} />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-white/40 text-[10px] font-bold tracking-widest uppercase">To</label>
+                  <input type="date" value={leaveTo} onChange={(e) => setLeaveTo(e.target.value)}
+                    className={inputCls + " [color-scheme:dark]"} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-white/40 text-[10px] font-bold tracking-widest uppercase">Reason (optional)</label>
+                  <textarea value={leaveReason} onChange={(e) => setLeaveReason(e.target.value)}
+                    rows={3} placeholder="Brief reason for leave…"
+                    className={inputCls + " resize-none"} />
+                </div>
+                {leaveMsg && (
+                  <p className={`text-xs ${leaveMsg.ok ? "text-green-400" : "text-red-400"}`}>{leaveMsg.text}</p>
+                )}
+                <button type="submit" disabled={leaveSubmitting}
+                  className="w-full py-2.5 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-xs hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
+                  {leaveSubmitting ? "Submitting…" : "Submit Request"}
+                </button>
+              </form>
+            )}
+
+            {leaves.length === 0 ? (
+              <p className="text-white/30 text-sm py-6 text-center">No leave requests yet.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {leaves.map((l) => {
+                  const StatusIcon = STATUS_ICON[l.status];
+                  const days = Math.round((new Date(l.to_date).getTime() - new Date(l.from_date).getTime()) / 86400000) + 1;
+                  return (
+                    <div key={l.id} className="border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-white font-semibold text-sm">{LEAVE_LABEL[l.leave_type]}</p>
+                          <p className="text-white/40 text-xs mt-0.5">
+                            {new Date(l.from_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                            {" – "}
+                            {new Date(l.to_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                            {" · "}{days} day{days !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <span className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${STATUS_STYLE[l.status]}`}>
+                          <StatusIcon className="w-3 h-3" /> {l.status}
+                        </span>
+                      </div>
+                      {l.reason && <p className="text-white/40 text-xs border-l-2 border-white/10 pl-3">{l.reason}</p>}
+                      {l.admin_note && (
+                        <p className="text-white/50 text-xs border-l-2 border-brand-gold/40 pl-3">
+                          <span className="text-brand-gold/70">Manager note:</span> {l.admin_note}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+        ) : (
+          /* ── Profile ── */
+          <div className="flex flex-col gap-4">
+            <p className="text-white/40 text-xs font-bold tracking-widest uppercase">My Profile</p>
+            <div className="border border-white/10 bg-white/[0.02] divide-y divide-white/5">
+              {[
+                { icon: User, label: "Full Name", value: employee.full_name },
+                { icon: Building2, label: "Department", value: employee.department },
+                { icon: BadgeCheck, label: "Role", value: employee.role },
+                { icon: CalendarDays, label: "Employee Code", value: employee.employee_code },
+                { icon: Mail, label: "Email", value: employee.email },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-center gap-4 px-5 py-4">
+                  <Icon className="w-4 h-4 text-brand-gold/60 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/30 text-[10px] font-bold tracking-widest uppercase">{label}</p>
+                    <p className="text-white text-sm mt-0.5 truncate">{value}</p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Phone — editable */}
+              <div className="flex items-center gap-4 px-5 py-4">
+                <Phone className="w-4 h-4 text-brand-gold/60 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-white/30 text-[10px] font-bold tracking-widest uppercase">Phone</p>
+                  {editingPhone ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="tel" value={phoneVal} onChange={(e) => setPhoneVal(e.target.value)}
+                        placeholder="+91 98765 43210" autoFocus
+                        className="flex-1 bg-white/5 border border-brand-gold/40 text-white py-1.5 px-2 text-sm outline-none" />
+                      <button onClick={savePhone} disabled={phoneSaving}
+                        className="text-green-400 hover:text-green-300 transition-colors p-1">
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => { setEditingPhone(false); setPhoneVal(employee.phone ?? ""); }}
+                        className="text-white/30 hover:text-white/60 transition-colors p-1">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <p className="text-white text-sm">{employee.phone || <span className="text-white/30">Not set</span>}</p>
+                      <button onClick={() => setEditingPhone(true)}
+                        className="text-white/20 hover:text-brand-gold transition-colors p-1">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {employee.joining_date && (
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <CalendarDays className="w-4 h-4 text-brand-gold/60 shrink-0" />
+                  <div>
+                    <p className="text-white/30 text-[10px] font-bold tracking-widest uppercase">Joining Date</p>
+                    <p className="text-white text-sm mt-0.5">
+                      {new Date(employee.joining_date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
