@@ -147,6 +147,13 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              <Link
+                href="/staff"
+                onClick={() => setOpen(false)}
+                className="text-xs font-bold tracking-[0.15em] uppercase text-white/25 hover:text-white/50 transition-colors"
+              >
+                Staff Portal
+              </Link>
             </div>
           </nav>
         </div>
