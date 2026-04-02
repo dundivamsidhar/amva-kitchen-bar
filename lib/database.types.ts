@@ -37,6 +37,8 @@ export type Database = {
           is_vegetarian: boolean;
           is_vegan: boolean;
           spice_level: number | null;
+          is_special_today: boolean;
+          special_note: string | null;
           created_at: string;
         };
         Insert: {
@@ -51,6 +53,8 @@ export type Database = {
           is_vegetarian?: boolean;
           is_vegan?: boolean;
           spice_level?: number | null;
+          is_special_today?: boolean;
+          special_note?: string | null;
         };
         Update: {
           category_id?: number;
@@ -64,6 +68,8 @@ export type Database = {
           is_vegetarian?: boolean;
           is_vegan?: boolean;
           spice_level?: number | null;
+          is_special_today?: boolean;
+          special_note?: string | null;
         };
       };
       orders: {

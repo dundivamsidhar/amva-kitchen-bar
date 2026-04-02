@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import FloatingCart from "@/components/FloatingCart";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/lib/CartContext";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
           <Navbar />
           <main>{children}</main>
           <Footer />
+          <FloatingCart />
           <Toaster
             position="bottom-center"
             toastOptions={{

@@ -10,13 +10,14 @@ export default function Hero() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1800&q=80')`,
+          backgroundImage: `url('https://images.unsplash.com/photo-1544148103-0773bf10d330?w=1800&q=80')`,
         }}
       />
 
       {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-brand-black/50 via-brand-black/40 to-brand-black" />
-      <div className="absolute inset-0 bg-gradient-to-r from-brand-black/60 via-transparent to-brand-black/30" />
+      <div className="absolute inset-0 bg-brand-black/70" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-black/60 via-transparent to-brand-black" />
+      <div className="absolute inset-0 bg-gradient-to-r from-brand-black/80 via-brand-black/20 to-brand-black/40" />
 
       {/* Noise texture */}
       <div className="absolute inset-0 bg-noise opacity-30" />

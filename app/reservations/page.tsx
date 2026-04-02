@@ -50,7 +50,8 @@ export default function ReservationsPage() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from("reservations").insert(form);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from("reservations").insert(form);
       if (error) throw error;
       setSubmitted(true);
       toast.success("Reservation request received! We'll confirm shortly.");

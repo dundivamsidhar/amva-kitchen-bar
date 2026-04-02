@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { MenuItem } from "@/lib/database.types";
 
 export interface CartItem {
@@ -21,9 +21,34 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | null>(null);
+const STORAGE_KEY = "amva_cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setCart(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+    setHydrated(true);
+  }, []);
+
+  // Save cart to localStorage on every change (after hydration)
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+    } catch {
+      // ignore
+    }
+  }, [cart, hydrated]);
 
   const addToCart = useCallback((item: MenuItem) => {
     setCart((prev) => {
