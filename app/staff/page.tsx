@@ -96,7 +96,7 @@ const DEPARTMENTS = ["Kitchen", "Bar", "Front of House", "Management", "Housekee
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
 
   // Sign-in state
   const [email, setEmail] = useState("");
@@ -112,12 +112,20 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
   const [suPhone, setSuPhone] = useState("");
   const [suJoining, setSuJoining] = useState("");
 
+  // Reset password state
+  const [rpEmail, setRpEmail] = useState("");
+  const [rpEmpCode, setRpEmpCode] = useState("");
+  const [rpNewPw, setRpNewPw] = useState("");
+  const [rpConfirm, setRpConfirm] = useState("");
+  const [rpSuccess, setRpSuccess] = useState(false);
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function switchMode(m: "signin" | "signup") {
+  function switchMode(m: "signin" | "signup" | "reset") {
     setMode(m);
     setError("");
+    setRpSuccess(false);
   }
 
   async function handleSignIn(e: React.FormEvent) {
@@ -197,6 +205,47 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
     setLoading(false);
   }
 
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!rpEmail.trim()) { setError("Please enter your email."); return; }
+    if (!rpEmpCode.trim()) { setError("Please enter your employee code."); return; }
+    if (!rpNewPw) { setError("Please enter a new password."); return; }
+    if (rpNewPw.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (rpNewPw !== rpConfirm) { setError("Passwords do not match."); return; }
+    setLoading(true);
+
+    // Verify identity: email + employee code must match
+    const { data: emp } = await (supabase as any)
+      .from("employees")
+      .select("id")
+      .eq("email", rpEmail.trim().toLowerCase())
+      .eq("employee_code", rpEmpCode.trim().toUpperCase())
+      .eq("is_active", true)
+      .single();
+
+    if (!emp) {
+      setError("No matching account found. Check your email and employee code.");
+      setLoading(false);
+      return;
+    }
+
+    const { error: updateErr } = await (supabase as any)
+      .from("employees")
+      .update({ password: rpNewPw })
+      .eq("id", emp.id);
+
+    if (updateErr) {
+      setError("Failed to reset password. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    setRpSuccess(true);
+    setRpEmail(""); setRpEmpCode(""); setRpNewPw(""); setRpConfirm("");
+    setLoading(false);
+  }
+
   const inputCls = "w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-3 px-4 outline-none focus:border-brand-gold transition-colors";
   const labelCls = "text-white/40 text-xs font-bold tracking-widest uppercase";
 
@@ -215,22 +264,24 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex border border-white/10 mb-6">
-          {(["signin", "signup"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => switchMode(m)}
-              className={`flex-1 py-2.5 text-xs font-bold tracking-widest uppercase transition-colors ${
-                mode === m
-                  ? "bg-brand-gold text-brand-black"
-                  : "text-white/40 hover:text-white"
-              }`}
-            >
-              {m === "signin" ? "Sign In" : "Sign Up"}
-            </button>
-          ))}
-        </div>
+        {mode !== "reset" && (
+          <div className="flex border border-white/10 mb-6">
+            {(["signin", "signup"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                className={`flex-1 py-2.5 text-xs font-bold tracking-widest uppercase transition-colors ${
+                  mode === m
+                    ? "bg-brand-gold text-brand-black"
+                    : "text-white/40 hover:text-white"
+                }`}
+              >
+                {m === "signin" ? "Sign In" : "Sign Up"}
+              </button>
+            ))}
+          </div>
+        )}
 
         {mode === "signin" ? (
           <form onSubmit={handleSignIn} className="flex flex-col gap-4">
@@ -249,8 +300,55 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
               className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
               {loading ? "Signing in…" : "Sign In"}
             </button>
-            <p className="text-white/20 text-xs text-center">Forgot your password? Contact your manager.</p>
+            <button type="button" onClick={() => switchMode("reset")}
+              className="text-brand-gold/70 hover:text-brand-gold text-xs text-center underline underline-offset-2 transition-colors">
+              Forgot password? Reset it here
+            </button>
           </form>
+
+        ) : mode === "reset" ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 mb-2">
+              <button type="button" onClick={() => switchMode("signin")}
+                className="text-white/30 hover:text-white transition-colors text-xs">← Back to Sign In</button>
+              <p className="text-white font-semibold text-sm">Reset Password</p>
+            </div>
+            {rpSuccess ? (
+              <div className="border border-green-500/30 bg-green-500/10 p-4 text-center flex flex-col gap-3">
+                <p className="text-green-400 font-semibold text-sm">Password reset successfully!</p>
+                <button type="button" onClick={() => switchMode("signin")}
+                  className="text-xs text-brand-gold underline underline-offset-2">Back to Sign In</button>
+              </div>
+            ) : (
+              <form onSubmit={handleReset} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>Email</label>
+                  <input type="email" value={rpEmail} onChange={(e) => setRpEmail(e.target.value)}
+                    placeholder="you@amvakitchen.in" autoFocus className={inputCls} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>Employee Code</label>
+                  <input type="text" value={rpEmpCode} onChange={(e) => setRpEmpCode(e.target.value)}
+                    placeholder="EMP001" className={inputCls} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>New Password</label>
+                  <input type="password" value={rpNewPw} onChange={(e) => setRpNewPw(e.target.value)}
+                    placeholder="Min. 6 characters" className={inputCls} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>Confirm Password</label>
+                  <input type="password" value={rpConfirm} onChange={(e) => setRpConfirm(e.target.value)}
+                    placeholder="Re-enter new password" className={inputCls} />
+                </div>
+                {error && <p className="text-red-400 text-xs">{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-brand-gold text-brand-black font-bold tracking-widest uppercase text-sm hover:bg-brand-gold/90 transition-colors disabled:opacity-50">
+                  {loading ? "Resetting…" : "Reset Password"}
+                </button>
+              </form>
+            )}
+          </div>
         ) : (
           <form onSubmit={handleSignUp} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
