@@ -201,7 +201,7 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
   const labelCls = "text-white/40 text-xs font-bold tracking-widest uppercase";
 
   return (
-    <div className="min-h-screen bg-[#0d0a04] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#0d0a04] flex items-center justify-center px-4 pt-[72px] pb-12">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="flex flex-col items-center gap-5 mb-8">
@@ -658,9 +658,9 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
   const inputCls = "w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-2.5 px-3 outline-none focus:border-brand-gold transition-colors text-sm";
 
   return (
-    <div className="min-h-screen bg-[#0d0a04]">
-      {/* Top bar */}
-      <div className="bg-brand-dark/80 border-b border-white/5 px-4 py-4">
+    <div className="min-h-screen bg-[#0d0a04] pt-[72px]">
+      {/* Staff top bar — sticky below the global navbar */}
+      <div className="sticky top-[72px] z-40 bg-[#0d0a04]/95 backdrop-blur-md border-b border-white/5 px-4 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center shrink-0">
@@ -1023,7 +1023,7 @@ export default function StaffPage() {
 
   function handleLogout() {
     localStorage.removeItem(STAFF_SESSION_KEY);
-    setEmployee(null);
+    window.location.href = "/staff";
   }
 
   if (!checked) return null;
