@@ -261,3 +261,86 @@ body.dashboard-portal footer {
     color-scheme: dark;
   }
 }
+
+/* ── Public website (home, menu, cocktails, about, find-us) adaptive theme ── */
+/* Targets every page that is NOT an internal portal */
+
+@media (prefers-color-scheme: light) {
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) {
+    background-color: #f9f5f0;
+    color: #1c1407;
+    color-scheme: light;
+  }
+
+  /* Scrollbar */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal)::-webkit-scrollbar-track {
+    background: #ede8e0;
+  }
+
+  /* ── Navbar ── */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-black/95"],
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-dark/98"] {
+    background-color: rgba(249, 245, 240, 0.95) !important;
+    backdrop-filter: blur(12px);
+  }
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav .text-white,
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav [class*="text-white"] {
+    color: #1c1407 !important;
+  }
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav [class*="border-white/"] {
+    border-color: #c8bfb0 !important;
+  }
+
+  /* ── Section backgrounds ── */
+  /* bg-brand-black full sections */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-black"] {
+    background-color: #f9f5f0 !important;
+  }
+  /* bg-brand-dark sections */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-dark"] {
+    background-color: #ede8e0 !important;
+  }
+  /* bg-brand-brown cards */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-brown"] {
+    background-color: #e4ddd4 !important;
+  }
+  /* bg-brand-gray elements */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-gray"] {
+    background-color: #d8d3ca !important;
+  }
+  /* bg-[#0d0a04] and bg-[#0A0806] inline dark hex */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-[#0d0a04]"],
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-[#0A0806]"],
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-[#0a0806]"] {
+    background-color: #f9f5f0 !important;
+  }
+
+  /* ── Text ── */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-white {
+    color: #1c1407 !important;
+  }
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="text-white/"] {
+    color: #5a4e3c !important;
+  }
+  /* Keep brand-cream as-is — it's already warm-toned */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-brand-cream {
+    color: #1c1407 !important;
+  }
+
+  /* ── Borders ── */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="border-white/"] {
+    border-color: #c8bfb0 !important;
+  }
+
+  /* ── Footer ── */
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer[class*="bg-brand-black"],
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer {
+    background-color: #ede8e0 !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) {
+    color-scheme: dark;
+  }
+}
