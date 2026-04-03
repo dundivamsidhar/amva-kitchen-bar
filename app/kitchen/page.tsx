@@ -390,6 +390,8 @@ export default function KitchenPage() {
       setAuthed(true);
     }
     setChecked(true);
+    document.body.classList.add("kitchen-portal");
+    return () => { document.body.classList.remove("kitchen-portal"); };
   }, []);
 
   if (!checked) return null;

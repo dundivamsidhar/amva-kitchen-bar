@@ -147,3 +147,100 @@
     color-scheme: dark;
   }
 }
+
+/* ── Admin / Kitchen / Dashboard adaptive theme ───────────────────────────── */
+
+@media (prefers-color-scheme: light) {
+  body.admin-portal,
+  body.kitchen-portal,
+  body.dashboard-portal {
+    background-color: #f7f4ef !important;
+    color: #1c1407 !important;
+    color-scheme: light;
+  }
+
+  /* Full-screen dark backgrounds → warm white */
+  body.admin-portal .bg-\[#0d0a04\],
+  body.kitchen-portal .bg-\[#0d0a04\],
+  body.dashboard-portal .bg-\[#0d0a04\] {
+    background-color: #f7f4ef !important;
+  }
+
+  /* brand-black → warm white */
+  body.admin-portal .bg-brand-black,
+  body.kitchen-portal .bg-brand-black,
+  body.dashboard-portal .bg-brand-black {
+    background-color: #f7f4ef !important;
+  }
+
+  /* brand-dark overlays → very subtle tint */
+  body.admin-portal [class*="bg-brand-dark"],
+  body.kitchen-portal [class*="bg-brand-dark"],
+  body.dashboard-portal [class*="bg-brand-dark"] {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* brand-brown cards → warm off-white */
+  body.admin-portal [class*="bg-brand-brown"],
+  body.kitchen-portal [class*="bg-brand-brown"],
+  body.dashboard-portal [class*="bg-brand-brown"] {
+    background-color: #edeae3 !important;
+  }
+
+  /* text-white → near-black */
+  body.admin-portal .text-white,
+  body.kitchen-portal .text-white,
+  body.dashboard-portal .text-white {
+    color: #1c1407 !important;
+  }
+
+  /* White/opacity text → muted dark */
+  body.admin-portal [class*="text-white/"],
+  body.kitchen-portal [class*="text-white/"],
+  body.dashboard-portal [class*="text-white/"] {
+    color: #5a4e3c !important;
+  }
+
+  /* White borders → soft warm border */
+  body.admin-portal [class*="border-white/"],
+  body.kitchen-portal [class*="border-white/"],
+  body.dashboard-portal [class*="border-white/"] {
+    border-color: #d6d0c6 !important;
+  }
+
+  /* Inputs & selects */
+  body.admin-portal input,
+  body.admin-portal select,
+  body.admin-portal textarea,
+  body.kitchen-portal input,
+  body.kitchen-portal select,
+  body.kitchen-portal textarea,
+  body.dashboard-portal input,
+  body.dashboard-portal select,
+  body.dashboard-portal textarea {
+    color: #1c1407 !important;
+    background-color: #edeae3 !important;
+    border-color: #d6d0c6 !important;
+  }
+
+  body.admin-portal input::placeholder,
+  body.kitchen-portal input::placeholder,
+  body.dashboard-portal input::placeholder {
+    color: #9c8f7e !important;
+  }
+
+  body.admin-portal input[type="date"],
+  body.admin-portal input[type="month"],
+  body.dashboard-portal input[type="date"],
+  body.dashboard-portal input[type="month"] {
+    color-scheme: light !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body.admin-portal,
+  body.kitchen-portal,
+  body.dashboard-portal {
+    color-scheme: dark;
+  }
+}
