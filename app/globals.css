@@ -148,6 +148,16 @@
   }
 }
 
+/* ── Admin / Kitchen / Dashboard portals — hide global navbar & footer ─── */
+body.admin-portal header,
+body.admin-portal footer,
+body.kitchen-portal header,
+body.kitchen-portal footer,
+body.dashboard-portal header,
+body.dashboard-portal footer {
+  display: none !important;
+}
+
 /* ── Admin / Kitchen / Dashboard adaptive theme ───────────────────────────── */
 
 @media (prefers-color-scheme: light) {
@@ -159,21 +169,21 @@
     color-scheme: light;
   }
 
-  /* Full-screen dark backgrounds → warm white */
-  body.admin-portal .bg-\[#0d0a04\],
-  body.kitchen-portal .bg-\[#0d0a04\],
-  body.dashboard-portal .bg-\[#0d0a04\] {
+  /* Full-screen dark backgrounds → warm white (use substring attr selector to avoid # escaping) */
+  body.admin-portal [class*="bg-[#0d0a04]"],
+  body.kitchen-portal [class*="bg-[#0d0a04]"],
+  body.dashboard-portal [class*="bg-[#0d0a04]"] {
     background-color: #f7f4ef !important;
   }
 
   /* brand-black → warm white */
-  body.admin-portal .bg-brand-black,
-  body.kitchen-portal .bg-brand-black,
-  body.dashboard-portal .bg-brand-black {
+  body.admin-portal [class*="bg-brand-black"],
+  body.kitchen-portal [class*="bg-brand-black"],
+  body.dashboard-portal [class*="bg-brand-black"] {
     background-color: #f7f4ef !important;
   }
 
-  /* brand-dark overlays → very subtle tint */
+  /* brand-dark overlays → very subtle warm tint */
   body.admin-portal [class*="bg-brand-dark"],
   body.kitchen-portal [class*="bg-brand-dark"],
   body.dashboard-portal [class*="bg-brand-dark"] {
@@ -187,6 +197,13 @@
     background-color: #edeae3 !important;
   }
 
+  /* bg-white/[0.02] subtle cards → just a light wash */
+  body.admin-portal [class*="bg-white/[0.02]"],
+  body.kitchen-portal [class*="bg-white/[0.02]"],
+  body.dashboard-portal [class*="bg-white/[0.02]"] {
+    background-color: #edeae3 !important;
+  }
+
   /* text-white → near-black */
   body.admin-portal .text-white,
   body.kitchen-portal .text-white,
@@ -194,7 +211,7 @@
     color: #1c1407 !important;
   }
 
-  /* White/opacity text → muted dark */
+  /* White/opacity text → muted warm brown */
   body.admin-portal [class*="text-white/"],
   body.kitchen-portal [class*="text-white/"],
   body.dashboard-portal [class*="text-white/"] {

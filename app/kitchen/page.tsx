@@ -486,7 +486,7 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   const displayedOrders = filterByTab(orders);
 
   return (
-    <div className="min-h-screen bg-brand-black pt-20">
+    <div className="min-h-screen bg-brand-black">
       {/* Stats bar */}
       <div className="bg-brand-dark/80 border-b border-white/5 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center gap-4 flex-wrap">
@@ -522,7 +522,7 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
       </div>
 
       {/* KDS Header */}
-      <div className="sticky top-16 z-30 bg-brand-dark/95 backdrop-blur-md border-b border-white/5 px-4 py-3">
+      <div className="sticky top-0 z-30 bg-brand-dark/95 backdrop-blur-md border-b border-white/5 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <ChefHat className="w-5 h-5 text-brand-gold" />
