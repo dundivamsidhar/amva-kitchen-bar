@@ -15,6 +15,7 @@ import {
   EyeOff,
   ConciergeBell,
   LogOut,
+  Truck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -175,10 +176,10 @@ const STATUS_CONFIG = {
     action: "Mark Ready",
   },
   ready: {
-    label: "Ready",
+    label: "Ready — Awaiting Delivery",
     color: "border-green-400 bg-green-400/10 text-green-400",
     next: "served" as const,
-    action: "Mark Served",
+    action: "Food Delivered",
   },
   served: {
     label: "Served",
@@ -299,36 +300,48 @@ function OrderCard({
       </div>
 
       {/* Footer */}
-      <div className="px-4 pb-4 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
-        <div className="flex items-center gap-1.5 text-white/30 text-xs">
-          <Clock className="w-3 h-3" />
-          {timeAgo(order.created_at)}
-        </div>
-        <div className="flex gap-2">
-          {order.status !== "served" && order.status !== "cancelled" && (
-            <button
-              onClick={cancelOrder}
-              disabled={updating}
-              className="text-xs text-white/20 hover:text-brand-red transition-colors px-2 py-1 border border-white/5 hover:border-brand-red/30"
-            >
-              Cancel
-            </button>
-          )}
-          {cfg.next && (
-            <button
-              onClick={advanceStatus}
-              disabled={updating}
-              className={`text-xs font-bold px-3 py-1.5 transition-all disabled:opacity-50 ${
-                isNew
-                  ? "bg-brand-red text-white hover:bg-brand-red-light"
-                  : order.status === "ready"
-                  ? "bg-green-600 text-white hover:bg-green-500"
-                  : "bg-brand-gold text-brand-black hover:bg-brand-gold-light"
-              }`}
-            >
-              {updating ? "..." : cfg.action}
-            </button>
-          )}
+      <div className="border-t border-white/5">
+        {/* Food Delivered — full-width prominent CTA for ready orders */}
+        {order.status === "ready" && (
+          <button
+            onClick={advanceStatus}
+            disabled={updating}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-500 active:bg-green-700 text-white font-bold text-sm tracking-wide transition-all disabled:opacity-50"
+          >
+            <Truck className="w-4 h-4" />
+            {updating ? "Updating…" : "Food Delivered to Table"}
+          </button>
+        )}
+
+        <div className="px-4 pb-4 flex items-center justify-between gap-2 pt-3">
+          <div className="flex items-center gap-1.5 text-white/30 text-xs">
+            <Clock className="w-3 h-3" />
+            {timeAgo(order.created_at)}
+          </div>
+          <div className="flex gap-2">
+            {order.status !== "served" && order.status !== "cancelled" && (
+              <button
+                onClick={cancelOrder}
+                disabled={updating}
+                className="text-xs text-white/20 hover:text-brand-red transition-colors px-2 py-1 border border-white/5 hover:border-brand-red/30"
+              >
+                Cancel
+              </button>
+            )}
+            {cfg.next && order.status !== "ready" && (
+              <button
+                onClick={advanceStatus}
+                disabled={updating}
+                className={`text-xs font-bold px-3 py-1.5 transition-all disabled:opacity-50 ${
+                  isNew
+                    ? "bg-brand-red text-white hover:bg-brand-red-light"
+                    : "bg-brand-gold text-brand-black hover:bg-brand-gold-light"
+                }`}
+              >
+                {updating ? "..." : cfg.action}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
