@@ -105,3 +105,45 @@
     display: none !important;
   }
 }
+
+/* ── Staff portal adaptive theme ─────────────────────────────────────────── */
+
+/* Light mode: enforce warm-white palette for staff portal */
+@media (prefers-color-scheme: light) {
+  body.staff-portal {
+    background-color: #f7f4ef;
+    color: #1c1407;
+    color-scheme: light;
+  }
+
+  /* Blanket text-white → dark text (safe: buttons use text-brand-black or text-red-400) */
+  body.staff-portal .text-white {
+    color: #1c1407 !important;
+  }
+
+  /* Inputs & selects */
+  body.staff-portal input,
+  body.staff-portal select,
+  body.staff-portal textarea {
+    color: #1c1407 !important;
+    background-color: #edeae3 !important;
+    border-color: #d6d0c6 !important;
+  }
+  body.staff-portal input::placeholder,
+  body.staff-portal select::placeholder,
+  body.staff-portal textarea::placeholder {
+    color: #9c8f7e !important;
+  }
+
+  /* Date input calendar icon */
+  body.staff-portal input[type="date"] {
+    color-scheme: light !important;
+  }
+}
+
+/* Dark mode: explicit for staff portal */
+@media (prefers-color-scheme: dark) {
+  body.staff-portal {
+    color-scheme: dark;
+  }
+}
