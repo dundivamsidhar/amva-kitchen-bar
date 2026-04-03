@@ -28,6 +28,11 @@ import {
   Timer,
   LogIn,
   History,
+  ShieldCheck,
+  Users2,
+  ThumbsUp,
+  ThumbsDown,
+  ClockIcon,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -41,6 +46,7 @@ interface Employee {
   email: string;
   phone: string | null;
   joining_date: string | null;
+  is_manager: boolean;
 }
 
 interface Payslip {
@@ -82,6 +88,16 @@ interface LeaveRequest {
   status: "pending" | "approved" | "rejected";
   admin_note: string | null;
   created_at: string;
+}
+
+interface ManagerLeaveRequest extends LeaveRequest {
+  employee_id: string;
+  employees: { full_name: string; role: string; employee_code: string };
+}
+
+interface StaffAttendance extends AttendanceRecord {
+  employee_id: string;
+  employees: { full_name: string; employee_code: string; role: string };
 }
 
 const MONTH_NAMES = [
@@ -752,6 +768,88 @@ function TimeClock({ employeeId }: { employeeId: string }) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
+// ─── Manager Leave Card ───────────────────────────────────────────────────────
+
+const LEAVE_STATUS_STYLES: Record<string, string> = {
+  pending:  "border-yellow-500/30 bg-yellow-500/5 text-yellow-400",
+  approved: "border-green-500/30 bg-green-500/5 text-green-400",
+  rejected: "border-red-500/30  bg-red-500/5  text-red-400",
+};
+
+function ManagerLeaveCard({
+  req,
+  onAction,
+}: {
+  req: ManagerLeaveRequest;
+  onAction: (id: string, status: "approved" | "rejected", note: string) => Promise<void>;
+}) {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function act(status: "approved" | "rejected") {
+    setBusy(true);
+    await onAction(req.id, status, note);
+    setBusy(false);
+  }
+
+  const days =
+    Math.ceil(
+      (new Date(req.to_date).getTime() - new Date(req.from_date).getTime()) / 86400000
+    ) + 1;
+
+  return (
+    <div className={`border p-4 flex flex-col gap-3 ${req.status === "pending" ? "border-white/10 bg-white/[0.02]" : LEAVE_STATUS_STYLES[req.status]?.split(" ").slice(0,2).join(" ") + " bg-white/[0.02]"}`}>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-white font-semibold text-sm">{req.employees.full_name}</p>
+            <span className="text-white/30 text-[10px] border border-white/10 px-1.5 py-0.5">{req.employees.employee_code}</span>
+          </div>
+          <p className="text-white/40 text-xs mt-0.5">{req.employees.role}</p>
+        </div>
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 border ${LEAVE_STATUS_STYLES[req.status]}`}>
+          {req.status}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-4 text-xs">
+        <div><p className="text-white/30 uppercase tracking-widest text-[10px]">Type</p><p className="text-white capitalize mt-0.5">{req.leave_type}</p></div>
+        <div><p className="text-white/30 uppercase tracking-widest text-[10px]">From</p><p className="text-white mt-0.5">{new Date(req.from_date).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}</p></div>
+        <div><p className="text-white/30 uppercase tracking-widest text-[10px]">To</p><p className="text-white mt-0.5">{new Date(req.to_date).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}</p></div>
+        <div><p className="text-white/30 uppercase tracking-widest text-[10px]">Days</p><p className="text-white mt-0.5">{days}</p></div>
+      </div>
+
+      {req.reason && <p className="text-white/50 text-xs border-l-2 border-white/10 pl-3">{req.reason}</p>}
+
+      {req.status === "pending" ? (
+        <div className="flex flex-col gap-2 pt-1">
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Add a note (optional)"
+            className="w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-2 px-3 text-xs outline-none focus:border-brand-gold transition-colors"
+          />
+          <div className="flex gap-2">
+            <button onClick={() => act("approved")} disabled={busy}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold uppercase tracking-widest hover:bg-green-500/30 transition-colors disabled:opacity-50">
+              <ThumbsUp className="w-3.5 h-3.5" /> Approve
+            </button>
+            <button onClick={() => act("rejected")} disabled={busy}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-widest hover:bg-red-500/30 transition-colors disabled:opacity-50">
+              <ThumbsDown className="w-3.5 h-3.5" /> Reject
+            </button>
+          </div>
+        </div>
+      ) : req.admin_note ? (
+        <p className="text-white/40 text-xs italic border-l-2 border-brand-gold/20 pl-3">Note: {req.admin_note}</p>
+      ) : null}
+    </div>
+  );
+}
+
+// ─── Staff Dashboard ──────────────────────────────────────────────────────────
+
 function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Employee; onLogout: () => void }) {
   const [employee, setEmployee] = useState<Employee>(initialEmployee);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
@@ -759,7 +857,10 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"updates" | "payslips" | "leave" | "attendance" | "profile">("updates");
+  const [tab, setTab] = useState<"updates" | "payslips" | "leave" | "attendance" | "profile" | "manager">("updates");
+  const [managerLeaves, setManagerLeaves] = useState<ManagerLeaveRequest[]>([]);
+  const [managerAttendance, setManagerAttendance] = useState<StaffAttendance[]>([]);
+  const [managerTab, setManagerTab] = useState<"leaves" | "attendance">("leaves");
 
   // Leave form state
   const [leaveType, setLeaveType] = useState<LeaveRequest["leave_type"]>("casual");
@@ -791,6 +892,24 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
       if (upds) setUpdates(upds as CompanyUpdate[]);
       if (lvs) setLeaves(lvs as LeaveRequest[]);
       if (att) setAttendanceHistory(att as AttendanceRecord[]);
+
+      // Manager-only data
+      if (employee.is_manager) {
+        const [{ data: mgLeaves }, { data: mgAtt }] = await Promise.all([
+          (supabase as any)
+            .from("leave_requests")
+            .select("*, employees(full_name, role, employee_code)")
+            .order("created_at", { ascending: false }),
+          (supabase as any)
+            .from("attendance")
+            .select("*, employees(full_name, employee_code, role)")
+            .eq("date", new Date().toISOString().slice(0, 10))
+            .order("clock_in", { ascending: true }),
+        ]);
+        if (mgLeaves) setManagerLeaves(mgLeaves as ManagerLeaveRequest[]);
+        if (mgAtt) setManagerAttendance(mgAtt as StaffAttendance[]);
+      }
+
       setLoading(false);
     }
     loadAll();
@@ -916,6 +1035,7 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
             { id: "leave", label: "Leave", icon: ClipboardList, badge: pendingLeaves },
             { id: "attendance", label: "Attendance", icon: History },
             { id: "profile", label: "Profile", icon: User },
+            ...(employee.is_manager ? [{ id: "manager", label: "Manager", icon: ShieldCheck, badge: 0 }] : []),
           ] as const).map(({ id, label, icon: Icon, ...rest }) => {
             const badge = "badge" in rest ? (rest as { badge: number }).badge : 0;
             return (
@@ -1110,6 +1230,88 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+        ) : tab === "manager" ? (
+          /* ── Manager Panel ── */
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-brand-gold" />
+              <p className="text-white/40 text-xs font-bold tracking-widest uppercase">Manager Panel</p>
+            </div>
+
+            {/* Manager sub-tabs */}
+            <div className="flex border-b border-white/10">
+              {([
+                { id: "leaves", label: "Leave Requests", icon: ClipboardList },
+                { id: "attendance", label: "Today's Attendance", icon: ClockIcon },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button key={id} onClick={() => setManagerTab(id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-widest border-b-2 transition-colors -mb-px ${
+                    managerTab === id ? "border-brand-gold text-brand-gold" : "border-transparent text-white/30 hover:text-white"
+                  }`}>
+                  <Icon className="w-3.5 h-3.5" />{label}
+                </button>
+              ))}
+            </div>
+
+            {managerTab === "leaves" ? (
+              <div className="flex flex-col gap-3">
+                {managerLeaves.length === 0 && (
+                  <p className="text-white/30 text-sm py-8 text-center">No leave requests yet.</p>
+                )}
+                {/* Pending first, then rest */}
+                {[...managerLeaves].sort((a, b) => (a.status === "pending" ? -1 : 1)).map((req) => (
+                  <ManagerLeaveCard key={req.id} req={req} onAction={async (id, status, note) => {
+                    await (supabase as any)
+                      .from("leave_requests")
+                      .update({ status, admin_note: note || null })
+                      .eq("id", id);
+                    setManagerLeaves((prev) =>
+                      prev.map((r) => r.id === id ? { ...r, status, admin_note: note || null } : r)
+                    );
+                  }} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-white/40 text-xs font-bold tracking-widest uppercase">
+                  {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+                </p>
+                {managerAttendance.length === 0 && (
+                  <p className="text-white/30 text-sm py-8 text-center">No staff have clocked in today.</p>
+                )}
+                <div className="border border-white/10 divide-y divide-white/5">
+                  <div className="grid grid-cols-4 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white/25">
+                    <span className="col-span-1">Employee</span><span>In</span><span>Out</span><span>Duration</span>
+                  </div>
+                  {managerAttendance.map((a) => {
+                    const inMs = new Date(a.clock_in).getTime();
+                    const outMs = a.clock_out ? new Date(a.clock_out).getTime() : null;
+                    const durMs = outMs ? outMs - inMs : Date.now() - inMs;
+                    return (
+                      <div key={a.id} className="grid grid-cols-4 px-4 py-3 text-sm items-center">
+                        <div className="col-span-1">
+                          <p className="text-white font-semibold text-xs">{a.employees.full_name.split(" ")[0]}</p>
+                          <p className="text-white/30 text-[10px]">{a.employees.employee_code}</p>
+                        </div>
+                        <span className="text-white/70 text-xs">
+                          {new Date(a.clock_in).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                        </span>
+                        <span className={`text-xs ${a.clock_out ? "text-white/70" : "text-yellow-400 font-bold"}`}>
+                          {a.clock_out
+                            ? new Date(a.clock_out).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+                            : "Active"}
+                        </span>
+                        <span className={`text-xs font-mono ${a.clock_out ? "text-white/60" : "text-green-400"}`}>
+                          {fmt(durMs)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
