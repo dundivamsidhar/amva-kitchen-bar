@@ -621,6 +621,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (sessionStorage.getItem("amva_admin") === "1") setAuthed(true);
     setChecked(true);
+    document.body.classList.add("dashboard-portal");
+    return () => { document.body.classList.remove("dashboard-portal"); };
   }, []);
 
   if (!checked) return null;

@@ -813,6 +813,8 @@ export default function AdminPage() {
       setAuthed(true);
     }
     setChecked(true);
+    document.body.classList.add("admin-portal");
+    return () => { document.body.classList.remove("admin-portal"); };
   }, []);
 
   if (!checked) return null;
