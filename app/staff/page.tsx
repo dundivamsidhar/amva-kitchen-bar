@@ -114,6 +114,11 @@ const DEPARTMENTS = ["Kitchen", "Bar", "Front of House", "Management", "Housekee
 function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
   const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
 
+  useEffect(() => {
+    document.body.classList.add("staff-portal");
+    return () => document.body.classList.remove("staff-portal");
+  }, []);
+
   // Sign-in state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -312,7 +317,7 @@ function LoginScreen({ onLogin }: { onLogin: (emp: Employee) => void }) {
   const labelCls = "text-white/40 text-xs font-bold tracking-widest uppercase";
 
   return (
-    <div className="min-h-screen bg-[#0d0a04] flex items-center justify-center px-4 pt-[72px] pb-12">
+    <div className="min-h-screen bg-[#0d0a04] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="flex flex-col items-center gap-5 mb-8">
@@ -852,6 +857,13 @@ function ManagerLeaveCard({
 
 function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Employee; onLogout: () => void }) {
   const [employee, setEmployee] = useState<Employee>(initialEmployee);
+
+  // Hide global Navbar + Footer while staff portal is active
+  useEffect(() => {
+    document.body.classList.add("staff-portal");
+    return () => document.body.classList.remove("staff-portal");
+  }, []);
+
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [updates, setUpdates] = useState<CompanyUpdate[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
@@ -965,9 +977,9 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
   const inputCls = "w-full bg-white/5 border border-white/10 text-white placeholder:text-white/20 py-2.5 px-3 outline-none focus:border-brand-gold transition-colors text-sm";
 
   return (
-    <div className="min-h-screen bg-[#0d0a04] pt-[72px]">
-      {/* Staff top bar — sticky below the global navbar */}
-      <div className="sticky top-[72px] z-40 bg-[#0d0a04]/95 backdrop-blur-md border-b border-white/5 px-4 py-4">
+    <div className="min-h-screen bg-[#0d0a04]">
+      {/* Staff top bar */}
+      <div className="sticky top-0 z-40 bg-[#0d0a04]/95 backdrop-blur-md border-b border-white/5 px-4 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center shrink-0">
@@ -1027,8 +1039,9 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap border-b border-white/10 gap-x-1">
+        {/* Tabs — horizontal scroll, never wrap */}
+        <div className="flex overflow-x-auto border-b border-white/10 scrollbar-none"
+          style={{ scrollbarWidth: "none" }}>
           {([
             { id: "updates", label: "Updates", icon: Megaphone },
             { id: "payslips", label: "Payslips", icon: FileText },
@@ -1042,7 +1055,7 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
             <button
               key={id}
               onClick={() => setTab(id as typeof tab)}
-              className={`relative flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-colors -mb-px ${
+              className={`shrink-0 relative flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-colors -mb-px ${
                 tab === id
                   ? "border-brand-gold text-brand-gold"
                   : "border-transparent text-white/30 hover:text-white"
