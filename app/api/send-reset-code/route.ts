@@ -7,9 +7,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
+  // Initialise lazily so missing key doesn't crash the build
+  const resend = new Resend(process.env.RESEND_API_KEY ?? "");
   const { email } = await req.json();
 
   if (!email) {
