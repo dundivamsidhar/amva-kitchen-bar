@@ -98,4 +98,10 @@
   .divider-gold {
     @apply w-16 h-0.5 bg-brand-gold;
   }
+
+  /* Staff portal — hide global header + footer */
+  body.staff-portal header,
+  body.staff-portal footer {
+    display: none !important;
+  }
 }
