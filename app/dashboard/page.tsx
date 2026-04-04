@@ -20,7 +20,10 @@ import {
   Pencil,
   Check,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -617,6 +620,7 @@ export default function DashboardPage() {
   const [authed, setAuthed] = useState(false);
   const [checked, setChecked] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     if (sessionStorage.getItem("amva_admin") === "1") setAuthed(true);
@@ -652,6 +656,13 @@ export default function DashboardPage() {
               <ArrowLeft className="w-3.5 h-3.5" />
               Admin
             </Link>
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className="w-9 h-9 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button
               onClick={() => { sessionStorage.removeItem("amva_admin"); setAuthed(false); }}
               className="flex items-center gap-1.5 px-3 py-2 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 transition-colors text-xs font-bold uppercase tracking-widest"

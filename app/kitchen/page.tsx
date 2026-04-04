@@ -16,7 +16,10 @@ import {
   ConciergeBell,
   LogOut,
   Truck,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 import toast from "react-hot-toast";
 
 // ─── Kitchen PIN Screen ───────────────────────────────────────────────────────
@@ -424,6 +427,7 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"active" | "all">("active");
   const [kitchenTab, setKitchenTab] = useState<KitchenTab>("all");
+  const { theme, toggle } = useTheme();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchOrders = useCallback(async () => {
@@ -613,6 +617,13 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
                 Updated {lastUpdated.toLocaleTimeString()}
               </span>
             )}
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className="w-9 h-9 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button
               onClick={onSignOut}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 transition-colors text-xs font-bold uppercase tracking-widest"

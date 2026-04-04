@@ -33,7 +33,10 @@ import {
   ThumbsUp,
   ThumbsDown,
   ClockIcon,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -857,6 +860,7 @@ function ManagerLeaveCard({
 
 function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Employee; onLogout: () => void }) {
   const [employee, setEmployee] = useState<Employee>(initialEmployee);
+  const { theme, toggle } = useTheme();
 
   // Hide global Navbar + Footer while staff portal is active
   useEffect(() => {
@@ -992,13 +996,22 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
               <p className="text-stone-500 dark:text-white/40 text-xs">{employee.role} · {employee.employee_code}</p>
             </div>
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 hover:border-red-500/60 px-3 py-2 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-red-400">Sign Out</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className="w-9 h-9 flex items-center justify-center border border-stone-200 dark:border-white/10 text-stone-500 dark:text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 hover:border-red-500/60 px-3 py-2 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-400" />
+              <span className="text-red-400">Sign Out</span>
+            </button>
+          </div>
         </div>
       </div>
 

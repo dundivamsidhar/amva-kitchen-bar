@@ -158,75 +158,137 @@ body.dashboard-portal footer {
   display: none !important;
 }
 
-/* ── Admin panel — always light/white ────────────────────────────────────── */
+/* ── Admin / Dashboard portals — adaptive (follows toggle + system preference) ── */
 
-body.admin-portal,
-body.dashboard-portal {
+/* Light mode: system light preference (no manual dark override) */
+@media (prefers-color-scheme: light) {
+  html:not(.dark) body.admin-portal,
+  html:not(.dark) body.dashboard-portal {
+    background-color: #f7f4ef !important;
+    color: #1c1407 !important;
+    color-scheme: light;
+  }
+
+  html:not(.dark) body.admin-portal [class*="bg-[#0d0a04]"],
+  html:not(.dark) body.dashboard-portal [class*="bg-[#0d0a04]"],
+  html:not(.dark) body.admin-portal [class*="bg-brand-black"],
+  html:not(.dark) body.dashboard-portal [class*="bg-brand-black"] {
+    background-color: #f7f4ef !important;
+  }
+
+  html:not(.dark) body.admin-portal [class*="bg-brand-dark"],
+  html:not(.dark) body.dashboard-portal [class*="bg-brand-dark"] {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  html:not(.dark) body.admin-portal [class*="bg-brand-brown"],
+  html:not(.dark) body.admin-portal [class*="bg-white/[0.02]"],
+  html:not(.dark) body.dashboard-portal [class*="bg-brand-brown"],
+  html:not(.dark) body.dashboard-portal [class*="bg-white/[0.02]"] {
+    background-color: #edeae3 !important;
+  }
+
+  html:not(.dark) body.admin-portal .text-white,
+  html:not(.dark) body.dashboard-portal .text-white {
+    color: #1c1407 !important;
+  }
+
+  html:not(.dark) body.admin-portal [class*="text-white/"],
+  html:not(.dark) body.dashboard-portal [class*="text-white/"] {
+    color: #5a4e3c !important;
+  }
+
+  html:not(.dark) body.admin-portal [class*="border-white/"],
+  html:not(.dark) body.dashboard-portal [class*="border-white/"] {
+    border-color: #d6d0c6 !important;
+  }
+
+  html:not(.dark) body.admin-portal input,
+  html:not(.dark) body.admin-portal select,
+  html:not(.dark) body.admin-portal textarea,
+  html:not(.dark) body.dashboard-portal input,
+  html:not(.dark) body.dashboard-portal select,
+  html:not(.dark) body.dashboard-portal textarea {
+    color: #1c1407 !important;
+    background-color: #edeae3 !important;
+    border-color: #d6d0c6 !important;
+  }
+
+  html:not(.dark) body.admin-portal input::placeholder,
+  html:not(.dark) body.dashboard-portal input::placeholder {
+    color: #9c8f7e !important;
+  }
+
+  html:not(.dark) body.admin-portal input[type="date"],
+  html:not(.dark) body.admin-portal input[type="month"],
+  html:not(.dark) body.dashboard-portal input[type="date"],
+  html:not(.dark) body.dashboard-portal input[type="month"] {
+    color-scheme: light !important;
+  }
+}
+
+/* Light mode: manual toggle (html.light class) */
+html.light body.admin-portal,
+html.light body.dashboard-portal {
   background-color: #f7f4ef !important;
   color: #1c1407 !important;
   color-scheme: light;
 }
 
-body.admin-portal [class*="bg-[#0d0a04]"],
-body.dashboard-portal [class*="bg-[#0d0a04]"] {
+html.light body.admin-portal [class*="bg-[#0d0a04]"],
+html.light body.dashboard-portal [class*="bg-[#0d0a04]"],
+html.light body.admin-portal [class*="bg-brand-black"],
+html.light body.dashboard-portal [class*="bg-brand-black"] {
   background-color: #f7f4ef !important;
 }
 
-body.admin-portal [class*="bg-brand-black"],
-body.dashboard-portal [class*="bg-brand-black"] {
-  background-color: #f7f4ef !important;
-}
-
-body.admin-portal [class*="bg-brand-dark"],
-body.dashboard-portal [class*="bg-brand-dark"] {
+html.light body.admin-portal [class*="bg-brand-dark"],
+html.light body.dashboard-portal [class*="bg-brand-dark"] {
   background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
-body.admin-portal [class*="bg-brand-brown"],
-body.dashboard-portal [class*="bg-brand-brown"] {
+html.light body.admin-portal [class*="bg-brand-brown"],
+html.light body.admin-portal [class*="bg-white/[0.02]"],
+html.light body.dashboard-portal [class*="bg-brand-brown"],
+html.light body.dashboard-portal [class*="bg-white/[0.02]"] {
   background-color: #edeae3 !important;
 }
 
-body.admin-portal [class*="bg-white/[0.02]"],
-body.dashboard-portal [class*="bg-white/[0.02]"] {
-  background-color: #edeae3 !important;
-}
-
-body.admin-portal .text-white,
-body.dashboard-portal .text-white {
+html.light body.admin-portal .text-white,
+html.light body.dashboard-portal .text-white {
   color: #1c1407 !important;
 }
 
-body.admin-portal [class*="text-white/"],
-body.dashboard-portal [class*="text-white/"] {
+html.light body.admin-portal [class*="text-white/"],
+html.light body.dashboard-portal [class*="text-white/"] {
   color: #5a4e3c !important;
 }
 
-body.admin-portal [class*="border-white/"],
-body.dashboard-portal [class*="border-white/"] {
+html.light body.admin-portal [class*="border-white/"],
+html.light body.dashboard-portal [class*="border-white/"] {
   border-color: #d6d0c6 !important;
 }
 
-body.admin-portal input,
-body.admin-portal select,
-body.admin-portal textarea,
-body.dashboard-portal input,
-body.dashboard-portal select,
-body.dashboard-portal textarea {
+html.light body.admin-portal input,
+html.light body.admin-portal select,
+html.light body.admin-portal textarea,
+html.light body.dashboard-portal input,
+html.light body.dashboard-portal select,
+html.light body.dashboard-portal textarea {
   color: #1c1407 !important;
   background-color: #edeae3 !important;
   border-color: #d6d0c6 !important;
 }
 
-body.admin-portal input::placeholder,
-body.dashboard-portal input::placeholder {
+html.light body.admin-portal input::placeholder,
+html.light body.dashboard-portal input::placeholder {
   color: #9c8f7e !important;
 }
 
-body.admin-portal input[type="date"],
-body.admin-portal input[type="month"],
-body.dashboard-portal input[type="date"],
-body.dashboard-portal input[type="month"] {
+html.light body.admin-portal input[type="date"],
+html.light body.admin-portal input[type="month"],
+html.light body.dashboard-portal input[type="date"],
+html.light body.dashboard-portal input[type="month"] {
   color-scheme: light !important;
 }
 
