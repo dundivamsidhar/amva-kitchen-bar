@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   ChefHat,
@@ -430,8 +430,13 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   const { theme, toggle } = useTheme();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Keep a ref so fetchOrders always reads the latest view without being
+  // re-created on every view change (which would tear down the subscription).
+  const viewRef = useRef(view);
+  viewRef.current = view;
+
   const fetchOrders = useCallback(async () => {
-    const statuses = view === "active" ? ACTIVE_STATUSES : ALL_STATUSES;
+    const statuses = viewRef.current === "active" ? ACTIVE_STATUSES : ALL_STATUSES;
     const { data, error } = await (supabase as any)
       .from("orders")
       .select("*, order_items(*)")
@@ -454,13 +459,12 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
     if (count !== null) setServedToday(count);
 
     setLoading(false);
-  }, [view]);
+  }, []); // stable — reads view via ref, never needs to be recreated
 
+  // Subscribe once on mount; channel is never torn down on view changes.
   useEffect(() => {
     fetchOrders();
 
-    // Use unique channel name to avoid Supabase rejecting duplicate
-    // subscriptions after a page refresh
     const channel = supabase
       .channel(`kitchen-orders-${Date.now()}`)
       .on(
@@ -486,7 +490,12 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders]); // fetchOrders is now stable, so this runs only once
+
+  // Re-fetch immediately whenever the view tab changes.
+  useEffect(() => {
+    fetchOrders();
+  }, [view, fetchOrders]);
 
   // ── Stats ──────────────────────────────────────────────────────────────────
 
