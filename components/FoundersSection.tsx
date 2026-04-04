@@ -21,7 +21,7 @@ const FOUNDERS = [
 
 export default function FoundersSection() {
   return (
-    <section className="py-24 bg-brand-black overflow-hidden">
+    <section className="preserve-dark py-24 bg-brand-black overflow-hidden">
       <div className="container-custom">
 
         {/* Header */}
