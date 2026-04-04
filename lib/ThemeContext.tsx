@@ -9,33 +9,44 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
   toggle: () => {},
 });
 
+function applyTheme(t: Theme) {
+  const root = document.documentElement;
+  if (t === "dark") {
+    root.classList.add("dark");
+    root.classList.remove("light");
+  } else {
+    root.classList.remove("dark");
+    root.classList.add("light");
+  }
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    // Read saved preference, fall back to system
-    const saved = localStorage.getItem("amva_theme") as Theme | null;
-    const sys = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-    const resolved = saved ?? sys;
-    setTheme(resolved);
-    applyTheme(resolved);
-  }, []);
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const sys = (): Theme => (mq.matches ? "light" : "dark");
 
-  function applyTheme(t: Theme) {
-    const root = document.documentElement;
-    if (t === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.remove("dark");
-      root.classList.add("light");
-    }
-  }
+    // On mount: use system preference (ignore any stale localStorage value)
+    const initial = sys();
+    setTheme(initial);
+    applyTheme(initial);
+    // Clear any old saved override so system preference stays in control
+    localStorage.removeItem("amva_theme");
+
+    // Keep in sync when system preference changes
+    const onChange = () => {
+      const next = sys();
+      setTheme(next);
+      applyTheme(next);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    localStorage.setItem("amva_theme", next);
     applyTheme(next);
   }
 
