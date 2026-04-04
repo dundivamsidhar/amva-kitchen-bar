@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { Minus, Plus, Trash2, ChefHat, ShoppingBag, CreditCard, Smartphone, Banknote, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, Trash2, ChefHat, ShoppingBag, CreditCard, Smartphone, Banknote, CheckCircle2, Clock, UtensilsCrossed, Bell, Truck } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { supabase } from "@/lib/supabase";
@@ -39,6 +39,119 @@ declare global {
     Razorpay: any;
   }
 }
+
+// ─── Order Status Tracker ─────────────────────────────────────────────────────
+
+const STATUS_STEPS = [
+  { key: "new",          label: "Order Received",  icon: Bell },
+  { key: "acknowledged", label: "Acknowledged",    icon: CheckCircle2 },
+  { key: "preparing",    label: "Preparing",       icon: ChefHat },
+  { key: "ready",        label: "Ready",           icon: UtensilsCrossed },
+  { key: "served",       label: "Delivered",       icon: Truck },
+] as const;
+
+const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
+
+function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
+  orderId: string;
+  tableNumber: number;
+  paymentMethod: string;
+}) {
+  const [status, setStatus] = useState<string>("new");
+
+  useEffect(() => {
+    // Initial fetch
+    (supabase as any).from("orders").select("status").eq("id", orderId).single()
+      .then(({ data }: { data: { status: string } | null }) => { if (data) setStatus(data.status); });
+
+    // Live subscription
+    const channel = (supabase as any)
+      .channel(`order-${orderId}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "orders",
+        filter: `id=eq.${orderId}`,
+      }, (payload: { new: { status: string } }) => {
+        setStatus(payload.new.status);
+      })
+      .subscribe();
+
+    return () => { (supabase as any).removeChannel(channel); };
+  }, [orderId]);
+
+  const currentIdx = STATUS_ORDER.indexOf(status as typeof STATUS_ORDER[number]);
+  const isServed = status === "served";
+
+  return (
+    <div className="min-h-screen bg-brand-black flex items-center justify-center px-4 pt-20 pb-12">
+      <div className="max-w-md w-full flex flex-col items-center gap-8">
+        {/* Icon */}
+        <div className={`w-20 h-20 border-2 flex items-center justify-center transition-colors ${
+          isServed ? "bg-green-500/10 border-green-500/40" : "bg-brand-gold/10 border-brand-gold/40"
+        }`}>
+          {isServed
+            ? <CheckCircle2 className="w-9 h-9 text-green-400" />
+            : <Clock className="w-9 h-9 text-brand-gold animate-pulse" />
+          }
+        </div>
+
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-bold text-white">
+            {isServed ? "Enjoy your meal!" : "Order Placed!"}
+          </h2>
+          <p className="text-white/50 text-sm mt-2">
+            Table <span className="text-brand-gold font-bold">{tableNumber}</span>
+            {" · "}
+            {paymentMethod === "cash" ? "Pay at table" : paymentMethod.toUpperCase()}
+          </p>
+        </div>
+
+        {/* Step tracker */}
+        <div className="w-full flex flex-col gap-0">
+          {STATUS_STEPS.map((step, idx) => {
+            const done = idx < currentIdx;
+            const active = idx === currentIdx;
+            const Icon = step.icon;
+            return (
+              <div key={step.key} className="flex items-start gap-4">
+                {/* Line + dot */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    done    ? "bg-brand-gold border-brand-gold"
+                    : active ? "bg-brand-gold/10 border-brand-gold animate-pulse"
+                    :          "bg-white/5 border-white/15"
+                  }`}>
+                    <Icon className={`w-3.5 h-3.5 ${done || active ? "text-brand-gold" : "text-white/20"}`} />
+                  </div>
+                  {idx < STATUS_STEPS.length - 1 && (
+                    <div className={`w-0.5 h-8 transition-colors ${done ? "bg-brand-gold" : "bg-white/10"}`} />
+                  )}
+                </div>
+                {/* Label */}
+                <div className="pt-1.5 pb-6">
+                  <p className={`text-sm font-semibold ${done || active ? "text-white" : "text-white/30"}`}>
+                    {step.label}
+                  </p>
+                  {active && !isServed && (
+                    <p className="text-brand-gold/70 text-xs mt-0.5">In progress…</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-3 flex-wrap justify-center">
+          <Link href="/menu" className="btn-primary text-xs">Order More</Link>
+          <Link href="/" className="btn-ghost text-xs">Back to Home</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Order Page ───────────────────────────────────────────────────────────────
 
 export default function OrderPage() {
   const { cart, removeFromCart, updateQuantity, updateNotes, clearCart, total, count } = useCart();
@@ -183,39 +296,13 @@ export default function OrderPage() {
     }
   }
 
-  // ── Success screen ───────────────────────────────────────────────────────────
+  // ── Success screen with live status tracker ──────────────────────────────────
   if (orderId) {
-    return (
-      <div className="min-h-screen bg-brand-black flex items-center justify-center px-4 pt-20">
-        <div className="max-w-md w-full text-center flex flex-col items-center gap-6">
-          <div className="w-20 h-20 bg-green-500/10 border-2 border-green-500/40 flex items-center justify-center">
-            <CheckCircle2 className="w-9 h-9 text-green-400" />
-          </div>
-          <h2 className="font-display text-4xl font-bold text-white">Order Placed!</h2>
-          <p className="text-white/50 leading-relaxed">
-            {paymentMethod === "cash"
-              ? `Your order is with the kitchen. Table `
-              : `Payment confirmed! Your order is with the kitchen. Table `}
-            <span className="text-brand-gold font-bold">{tableNumber}</span> — we&apos;ll
-            bring it to you shortly.
-          </p>
-          <div className="w-full p-4 border border-brand-gold/20 bg-brand-dark/50 text-left flex flex-col gap-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-white/30">Order ref</span>
-              <span className="text-brand-gold/70 font-mono break-all">{orderId.slice(0, 16)}…</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-white/30">Payment</span>
-              <span className="text-white/60 capitalize">{paymentMethod === "cash" ? "Cash at table" : paymentMethod.toUpperCase()}</span>
-            </div>
-          </div>
-          <div className="flex gap-3 flex-wrap justify-center">
-            <Link href="/menu" className="btn-primary text-xs">Order More</Link>
-            <Link href="/" className="btn-ghost text-xs">Back to Home</Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <OrderStatusTracker
+      orderId={orderId}
+      tableNumber={tableNumber}
+      paymentMethod={paymentMethod}
+    />;
   }
 
   return (

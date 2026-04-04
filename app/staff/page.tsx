@@ -1119,6 +1119,42 @@ function StaffDashboard({ employee: initialEmployee, onLogout }: { employee: Emp
         ) : tab === "leave" ? (
           /* ── Leave Requests ── */
           <div className="flex flex-col gap-5">
+            {/* Leave Balance Summary */}
+            {(() => {
+              const ALLOTTED: Record<string, number> = { casual: 12, sick: 10, annual: 15, other: 5 };
+              const used: Record<string, number> = { casual: 0, sick: 0, annual: 0, other: 0 };
+              leaves.filter(l => l.status === "approved").forEach(l => {
+                const days = Math.round((new Date(l.to_date).getTime() - new Date(l.from_date).getTime()) / 86400000) + 1;
+                used[l.leave_type] = (used[l.leave_type] || 0) + days;
+              });
+              return (
+                <div className="border border-stone-200 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.02] p-4">
+                  <p className="text-stone-500 dark:text-white/40 text-[10px] font-bold tracking-widest uppercase mb-3">Leave Balance (This Year)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(["casual", "sick", "annual", "other"] as const).map(type => {
+                      const allotted = ALLOTTED[type];
+                      const usedDays = used[type] || 0;
+                      const remaining = allotted - usedDays;
+                      const pct = Math.min((usedDays / allotted) * 100, 100);
+                      return (
+                        <div key={type} className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-stone-500 dark:text-white/40 text-[10px] uppercase tracking-widest">{LEAVE_LABEL[type]}</span>
+                            <span className={`text-xs font-bold ${remaining <= 2 ? "text-red-400" : "text-white"}`}>{remaining} left</span>
+                          </div>
+                          <div className="h-1.5 bg-stone-200 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-red-500" : "bg-brand-gold"}`}
+                              style={{ width: `${pct}%` }} />
+                          </div>
+                          <p className="text-stone-400 dark:text-white/25 text-[10px]">{usedDays} used of {allotted}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex items-center justify-between">
               <p className="text-stone-500 dark:text-white/40 text-xs font-bold tracking-widest uppercase">Leave Requests</p>
               <button
