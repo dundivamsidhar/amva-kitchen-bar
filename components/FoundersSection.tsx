@@ -38,7 +38,7 @@ export default function FoundersSection() {
         {/* Founder cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 max-w-5xl mx-auto">
           {FOUNDERS.map((founder) => (
-            <div key={founder.name} className="group relative bg-brand-dark overflow-hidden">
+            <div key={founder.name} className="preserve-dark group relative bg-brand-dark overflow-hidden">
 
               {/* Portrait */}
               <div className="relative h-[520px] overflow-hidden bg-brand-black">

@@ -305,7 +305,7 @@ html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.
   color: #6b5d4e !important;
 }
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="text-white/"] {
-  color: unset !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-brand-cream {
