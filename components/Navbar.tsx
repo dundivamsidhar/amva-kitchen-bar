@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, UtensilsCrossed, ShoppingBag } from "lucide-react";
+import { Menu, X, UtensilsCrossed, ShoppingBag, Sun, Moon } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
+import { useTheme } from "@/lib/ThemeContext";
 
 const NAV_LINKS = [
   { label: "Menu", href: "/menu" },
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { count } = useCart();
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -57,6 +59,14 @@ export default function Navbar() {
 
         {/* Desktop CTA + Cart */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          {/* Theme toggle */}
+          <button
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="w-10 h-10 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           {/* Cart icon */}
           <Link
             href="/order"
@@ -80,6 +90,9 @@ export default function Navbar() {
 
         {/* Mobile right side */}
         <div className="md:hidden flex items-center gap-3">
+          <button onClick={toggle} aria-label="Toggle theme" className="text-white/60 hover:text-brand-gold transition-colors">
+            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
           <Link href="/order" className="relative text-white/60" aria-label="View cart">
             <ShoppingBag className="w-5 h-5" />
             {count > 0 && (
