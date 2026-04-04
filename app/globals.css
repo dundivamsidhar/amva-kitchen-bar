@@ -304,6 +304,27 @@ html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.
   border-color: unset !important;
 }
 
+/* preserve-dark — restore dark backgrounds (more specific than the overrides above) */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-black"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-black"] {
+  background-color: #0A0806 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-dark"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-dark"] {
+  background-color: #120E09 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-brown"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-brown"] {
+  background-color: #1E160D !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-gray"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-gray"] {
+  background-color: #2A2218 !important;
+}
+
 /* Footer */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer {
   background-color: #ede8e0 !important;
