@@ -235,32 +235,70 @@ html.light body.kitchen-portal input[type="month"] {
 
 
 /* ── Public website light theme ───────────────────────────────────────────── */
-/* Dark photo sections stay dark — only navbar, body bg, and footer adapt.     */
+
+/* Body background */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) {
+  background-color: #fdf9f3;
+  color: #1c1407;
+}
 
 /* Scrollbar */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal)::-webkit-scrollbar-track {
   background: #ede8e0;
 }
 
-/* Navbar — cream/warm white when scrolled so toggle is visibly noticeable */
+/* Navbar — cream white background */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-black/95"],
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-dark/98"] {
   background-color: rgba(253, 249, 243, 0.97) !important;
   backdrop-filter: blur(16px);
 }
 
-/* Navbar text + icons — dark in light mode */
-html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav .text-white,
-html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav [class*="text-white/"] {
+/* Dark brand backgrounds → warm light */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-black"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-[#0A0806]"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-[#0a0806]"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-[#0d0a04]"] {
+  background-color: #fdf9f3 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-dark"] {
+  background-color: #f0ebe2 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-brown"] {
+  background-color: #e8e0d4 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-gray"] {
+  background-color: #ddd7cc !important;
+}
+
+/* Text */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-white {
   color: #1c1407 !important;
 }
 
-html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav [class*="border-white/"] {
-  border-color: rgba(28, 20, 7, 0.2) !important;
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="text-white/"] {
+  color: #6b5d4e !important;
 }
 
-/* Footer — warm dark */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-brand-cream {
+  color: #1c1407 !important;
+}
+
+/* Borders */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="border-white/"] {
+  border-color: #d4ccc0 !important;
+}
+
+/* Footer */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer {
-  background-color: #120e08 !important;
+  background-color: #ede8e0 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer .text-white,
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer [class*="text-white/"] {
+  color: #3d3022 !important;
 }
 
