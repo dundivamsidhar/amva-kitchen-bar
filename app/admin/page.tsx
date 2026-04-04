@@ -18,6 +18,10 @@ import {
   Trash2,
   FileText,
   Pin,
+  CalendarDays,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 
 // ─── Staff Types ──────────────────────────────────────────────────────────────
@@ -792,13 +796,131 @@ function MenuTab() {
   );
 }
 
+// ─── Reservations Tab ─────────────────────────────────────────────────────────
+
+interface Reservation {
+  id: number;
+  name: string;
+  date: string;
+  time: string;
+  guests: number;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  status: string;
+}
+
+function ReservationsTab() {
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"upcoming" | "all">("upcoming");
+
+  const fetchReservations = useCallback(async () => {
+    const query = (supabase as any).from("reservations").select("*").order("date", { ascending: true }).order("time", { ascending: true });
+    const { data } = filter === "upcoming"
+      ? await query.gte("date", new Date().toISOString().slice(0, 10))
+      : await query;
+    if (data) setReservations(data as Reservation[]);
+    setLoading(false);
+  }, [filter]);
+
+  useEffect(() => { fetchReservations(); }, [fetchReservations]);
+
+  async function updateStatus(id: number, status: string) {
+    await (supabase as any).from("reservations").update({ status }).eq("id", id);
+    fetchReservations();
+  }
+
+  const statusStyle: Record<string, string> = {
+    pending:   "border-yellow-500/40 text-yellow-400 bg-yellow-500/5",
+    confirmed: "border-green-500/40 text-green-400 bg-green-500/5",
+    cancelled: "border-white/10 text-white/30 bg-white/[0.02]",
+    seated:    "border-blue-400/40 text-blue-400 bg-blue-400/5",
+  };
+
+  if (loading) return <p className="text-white/30 text-sm py-12 text-center">Loading reservations…</p>;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Filter toggle */}
+      <div className="flex items-center justify-between">
+        <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
+          {reservations.length} {filter === "upcoming" ? "Upcoming" : "Total"} Reservation{reservations.length !== 1 ? "s" : ""}
+        </p>
+        <div className="flex border border-white/10">
+          {(["upcoming", "all"] as const).map((f) => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                filter === f ? "bg-brand-gold text-brand-black" : "text-white/40 hover:text-white"
+              }`}>
+              {f === "upcoming" ? "Upcoming" : "All"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {reservations.length === 0 && (
+        <p className="text-white/30 text-sm py-12 text-center">No reservations found.</p>
+      )}
+
+      <div className="flex flex-col gap-3">
+        {reservations.map((r) => (
+          <div key={r.id} className="border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-white font-semibold">{r.name}</p>
+                <p className="text-white/40 text-xs mt-0.5">
+                  <CalendarDays className="w-3 h-3 inline mr-1" />
+                  {new Date(r.date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                  {" at "}{r.time}
+                  {" · "}{r.guests} guest{r.guests !== 1 ? "s" : ""}
+                </p>
+                {(r.phone || r.email) && (
+                  <p className="text-white/30 text-xs mt-0.5">{r.phone}{r.phone && r.email ? " · " : ""}{r.email}</p>
+                )}
+                {r.notes && <p className="text-yellow-400/70 text-xs mt-1">Note: {r.notes}</p>}
+              </div>
+              <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${statusStyle[r.status] ?? "border-white/10 text-white/30"}`}>
+                {r.status}
+              </span>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 flex-wrap">
+              {r.status !== "confirmed" && r.status !== "cancelled" && (
+                <button onClick={() => updateStatus(r.id, "confirmed")}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirm
+                </button>
+              )}
+              {r.status === "confirmed" && (
+                <button onClick={() => updateStatus(r.id, "seated")}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-500 transition-colors">
+                  <Clock className="w-3.5 h-3.5" /> Mark Seated
+                </button>
+              )}
+              {r.status !== "cancelled" && (
+                <button onClick={() => updateStatus(r.id, "cancelled")}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 border border-white/10 text-white/40 hover:border-red-500/40 hover:text-red-400 transition-colors">
+                  <XCircle className="w-3.5 h-3.5" /> Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "orders",  label: "Orders",          icon: UtensilsCrossed },
-  { id: "specials",label: "Today's Specials", icon: Star },
-  { id: "menu",    label: "Menu",             icon: ChefHat },
-  { id: "staff",   label: "Staff",            icon: Users },
+  { id: "orders",       label: "Orders",          icon: UtensilsCrossed },
+  { id: "reservations", label: "Reservations",    icon: CalendarDays },
+  { id: "specials",     label: "Today's Specials", icon: Star },
+  { id: "menu",         label: "Menu",             icon: ChefHat },
+  { id: "staff",        label: "Staff",            icon: Users },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -876,10 +998,11 @@ export default function AdminPage() {
         </div>
 
         {/* Tab content */}
-        {tab === "orders"   && <OrdersTab />}
-        {tab === "specials" && <SpecialsTab />}
-        {tab === "menu"     && <MenuTab />}
-        {tab === "staff"    && <StaffTab />}
+        {tab === "orders"       && <OrdersTab />}
+        {tab === "reservations" && <ReservationsTab />}
+        {tab === "specials"     && <SpecialsTab />}
+        {tab === "menu"         && <MenuTab />}
+        {tab === "staff"        && <StaffTab />}
       </div>
     </div>
   );
