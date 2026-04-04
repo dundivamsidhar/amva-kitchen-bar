@@ -130,7 +130,7 @@ export default function MenuShowcase() {
   }
 
   return (
-    <section className="relative w-full overflow-hidden bg-black" style={{ height: "100svh" }}>
+    <section className="preserve-dark relative w-full overflow-hidden bg-black" style={{ height: "100svh" }}>
 
       {/* BG image */}
       <div

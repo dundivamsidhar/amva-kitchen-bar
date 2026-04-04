@@ -274,22 +274,34 @@ html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.
   background-color: #ddd7cc !important;
 }
 
-/* Text */
+/* Text — skip inside .preserve-dark (photo background) sections */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-white {
   color: #1c1407 !important;
+}
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark .text-white {
+  color: #ffffff !important;
 }
 
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="text-white/"] {
   color: #6b5d4e !important;
 }
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="text-white/"] {
+  color: unset !important;
+}
 
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-brand-cream {
   color: #1c1407 !important;
+}
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark .text-brand-cream {
+  color: #F5EDD6 !important;
 }
 
 /* Borders */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="border-white/"] {
   border-color: #d4ccc0 !important;
+}
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="border-white/"] {
+  border-color: unset !important;
 }
 
 /* Footer */
