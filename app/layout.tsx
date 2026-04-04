@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import FloatingCart from "@/components/FloatingCart";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/lib/CartContext";
+import { ThemeProvider } from "@/lib/ThemeContext";
 
 export const metadata: Metadata = {
   title: "AmVa Kitchen & Bar — Hyderabad",
@@ -28,6 +29,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Prevent flash of wrong theme — runs before paint */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            var saved = localStorage.getItem('amva_theme');
+            var sys = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            var t = saved || sys;
+            document.documentElement.classList.add(t);
+            if (t === 'light') document.documentElement.classList.remove('dark');
+            else document.documentElement.classList.remove('light');
+          })();
+        `}} />
         {/* Google Fonts loaded at runtime — avoids build-time network dependency */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -37,24 +49,26 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <CartProvider>
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
-          <FloatingCart />
-          <Toaster
-            position="bottom-center"
-            toastOptions={{
-              style: {
-                background: "#1E160D",
-                color: "#F5EDD6",
-                border: "1px solid rgba(212,160,23,0.4)",
-                fontFamily: "var(--font-sans)",
-                fontSize: "14px",
-              },
-            }}
-          />
-        </CartProvider>
+        <ThemeProvider>
+          <CartProvider>
+            <Navbar />
+            <main>{children}</main>
+            <Footer />
+            <FloatingCart />
+            <Toaster
+              position="bottom-center"
+              toastOptions={{
+                style: {
+                  background: "#1E160D",
+                  color: "#F5EDD6",
+                  border: "1px solid rgba(212,160,23,0.4)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: "14px",
+                },
+              }}
+            />
+          </CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
