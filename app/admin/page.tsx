@@ -22,7 +22,10 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 
 // ─── Staff Types ──────────────────────────────────────────────────────────────
 
@@ -929,6 +932,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [checked, setChecked] = useState(false);
   const [tab, setTab] = useState<TabId>("orders");
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     if (sessionStorage.getItem("amva_admin") === "1") {
@@ -966,6 +970,13 @@ export default function AdminPage() {
               <ChefHat className="w-3.5 h-3.5" />
               Kitchen
             </Link>
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className="w-9 h-9 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button
               onClick={() => {
                 sessionStorage.removeItem("amva_admin");
