@@ -106,46 +106,38 @@
   }
 }
 
-/* ── Staff portal adaptive theme ─────────────────────────────────────────── */
+/* ── Staff portal — light theme via html.light class ─────────────────────── */
 
-/* Light mode: enforce warm-white palette for staff portal */
-@media (prefers-color-scheme: light) {
-  body.staff-portal {
-    background-color: #f7f4ef;
-    color: #1c1407;
-    color-scheme: light;
-  }
-
-  /* Blanket text-white → dark text (safe: buttons use text-brand-black or text-red-400) */
-  body.staff-portal .text-white {
-    color: #1c1407 !important;
-  }
-
-  /* Inputs & selects */
-  body.staff-portal input,
-  body.staff-portal select,
-  body.staff-portal textarea {
-    color: #1c1407 !important;
-    background-color: #edeae3 !important;
-    border-color: #d6d0c6 !important;
-  }
-  body.staff-portal input::placeholder,
-  body.staff-portal select::placeholder,
-  body.staff-portal textarea::placeholder {
-    color: #9c8f7e !important;
-  }
-
-  /* Date input calendar icon */
-  body.staff-portal input[type="date"] {
-    color-scheme: light !important;
-  }
+html.light body.staff-portal {
+  background-color: #f7f4ef;
+  color: #1c1407;
+  color-scheme: light;
 }
 
-/* Dark mode: explicit for staff portal */
-@media (prefers-color-scheme: dark) {
-  body.staff-portal {
-    color-scheme: dark;
-  }
+html.light body.staff-portal .text-white {
+  color: #1c1407 !important;
+}
+
+html.light body.staff-portal input,
+html.light body.staff-portal select,
+html.light body.staff-portal textarea {
+  color: #1c1407 !important;
+  background-color: #edeae3 !important;
+  border-color: #d6d0c6 !important;
+}
+
+html.light body.staff-portal input::placeholder,
+html.light body.staff-portal select::placeholder,
+html.light body.staff-portal textarea::placeholder {
+  color: #9c8f7e !important;
+}
+
+html.light body.staff-portal input[type="date"] {
+  color-scheme: light !important;
+}
+
+html.dark body.staff-portal {
+  color-scheme: dark;
 }
 
 /* ── Admin / Kitchen / Dashboard portals — hide global navbar & footer ─── */
@@ -158,78 +150,13 @@ body.dashboard-portal footer {
   display: none !important;
 }
 
-/* ── Admin / Dashboard portals — adaptive (follows toggle + system preference) ── */
+/* ── Admin / Dashboard / Kitchen portals — light theme via html.light class ── */
+/* The blocking script in layout.tsx sets html.light or html.dark based on    */
+/* system preference before first paint, so this is the only selector needed. */
 
-/* Light mode: system light preference (no manual dark override) */
-@media (prefers-color-scheme: light) {
-  html:not(.dark) body.admin-portal,
-  html:not(.dark) body.dashboard-portal {
-    background-color: #f7f4ef !important;
-    color: #1c1407 !important;
-    color-scheme: light;
-  }
-
-  html:not(.dark) body.admin-portal [class*="bg-[#0d0a04]"],
-  html:not(.dark) body.dashboard-portal [class*="bg-[#0d0a04]"],
-  html:not(.dark) body.admin-portal [class*="bg-brand-black"],
-  html:not(.dark) body.dashboard-portal [class*="bg-brand-black"] {
-    background-color: #f7f4ef !important;
-  }
-
-  html:not(.dark) body.admin-portal [class*="bg-brand-dark"],
-  html:not(.dark) body.dashboard-portal [class*="bg-brand-dark"] {
-    background-color: rgba(0, 0, 0, 0.04) !important;
-  }
-
-  html:not(.dark) body.admin-portal [class*="bg-brand-brown"],
-  html:not(.dark) body.admin-portal [class*="bg-white/[0.02]"],
-  html:not(.dark) body.dashboard-portal [class*="bg-brand-brown"],
-  html:not(.dark) body.dashboard-portal [class*="bg-white/[0.02]"] {
-    background-color: #edeae3 !important;
-  }
-
-  html:not(.dark) body.admin-portal .text-white,
-  html:not(.dark) body.dashboard-portal .text-white {
-    color: #1c1407 !important;
-  }
-
-  html:not(.dark) body.admin-portal [class*="text-white/"],
-  html:not(.dark) body.dashboard-portal [class*="text-white/"] {
-    color: #5a4e3c !important;
-  }
-
-  html:not(.dark) body.admin-portal [class*="border-white/"],
-  html:not(.dark) body.dashboard-portal [class*="border-white/"] {
-    border-color: #d6d0c6 !important;
-  }
-
-  html:not(.dark) body.admin-portal input,
-  html:not(.dark) body.admin-portal select,
-  html:not(.dark) body.admin-portal textarea,
-  html:not(.dark) body.dashboard-portal input,
-  html:not(.dark) body.dashboard-portal select,
-  html:not(.dark) body.dashboard-portal textarea {
-    color: #1c1407 !important;
-    background-color: #edeae3 !important;
-    border-color: #d6d0c6 !important;
-  }
-
-  html:not(.dark) body.admin-portal input::placeholder,
-  html:not(.dark) body.dashboard-portal input::placeholder {
-    color: #9c8f7e !important;
-  }
-
-  html:not(.dark) body.admin-portal input[type="date"],
-  html:not(.dark) body.admin-portal input[type="month"],
-  html:not(.dark) body.dashboard-portal input[type="date"],
-  html:not(.dark) body.dashboard-portal input[type="month"] {
-    color-scheme: light !important;
-  }
-}
-
-/* Light mode: manual toggle (html.light class) */
 html.light body.admin-portal,
-html.light body.dashboard-portal {
+html.light body.dashboard-portal,
+html.light body.kitchen-portal {
   background-color: #f7f4ef !important;
   color: #1c1407 !important;
   color-scheme: light;
@@ -237,35 +164,43 @@ html.light body.dashboard-portal {
 
 html.light body.admin-portal [class*="bg-[#0d0a04]"],
 html.light body.dashboard-portal [class*="bg-[#0d0a04]"],
+html.light body.kitchen-portal [class*="bg-[#0d0a04]"],
 html.light body.admin-portal [class*="bg-brand-black"],
-html.light body.dashboard-portal [class*="bg-brand-black"] {
+html.light body.dashboard-portal [class*="bg-brand-black"],
+html.light body.kitchen-portal [class*="bg-brand-black"] {
   background-color: #f7f4ef !important;
 }
 
 html.light body.admin-portal [class*="bg-brand-dark"],
-html.light body.dashboard-portal [class*="bg-brand-dark"] {
+html.light body.dashboard-portal [class*="bg-brand-dark"],
+html.light body.kitchen-portal [class*="bg-brand-dark"] {
   background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
 html.light body.admin-portal [class*="bg-brand-brown"],
 html.light body.admin-portal [class*="bg-white/[0.02]"],
 html.light body.dashboard-portal [class*="bg-brand-brown"],
-html.light body.dashboard-portal [class*="bg-white/[0.02]"] {
+html.light body.dashboard-portal [class*="bg-white/[0.02]"],
+html.light body.kitchen-portal [class*="bg-brand-brown"],
+html.light body.kitchen-portal [class*="bg-white/[0.02]"] {
   background-color: #edeae3 !important;
 }
 
 html.light body.admin-portal .text-white,
-html.light body.dashboard-portal .text-white {
+html.light body.dashboard-portal .text-white,
+html.light body.kitchen-portal .text-white {
   color: #1c1407 !important;
 }
 
 html.light body.admin-portal [class*="text-white/"],
-html.light body.dashboard-portal [class*="text-white/"] {
+html.light body.dashboard-portal [class*="text-white/"],
+html.light body.kitchen-portal [class*="text-white/"] {
   color: #5a4e3c !important;
 }
 
 html.light body.admin-portal [class*="border-white/"],
-html.light body.dashboard-portal [class*="border-white/"] {
+html.light body.dashboard-portal [class*="border-white/"],
+html.light body.kitchen-portal [class*="border-white/"] {
   border-color: #d6d0c6 !important;
 }
 
@@ -274,72 +209,30 @@ html.light body.admin-portal select,
 html.light body.admin-portal textarea,
 html.light body.dashboard-portal input,
 html.light body.dashboard-portal select,
-html.light body.dashboard-portal textarea {
+html.light body.dashboard-portal textarea,
+html.light body.kitchen-portal input,
+html.light body.kitchen-portal select,
+html.light body.kitchen-portal textarea {
   color: #1c1407 !important;
   background-color: #edeae3 !important;
   border-color: #d6d0c6 !important;
 }
 
 html.light body.admin-portal input::placeholder,
-html.light body.dashboard-portal input::placeholder {
+html.light body.dashboard-portal input::placeholder,
+html.light body.kitchen-portal input::placeholder {
   color: #9c8f7e !important;
 }
 
 html.light body.admin-portal input[type="date"],
 html.light body.admin-portal input[type="month"],
 html.light body.dashboard-portal input[type="date"],
-html.light body.dashboard-portal input[type="month"] {
+html.light body.dashboard-portal input[type="month"],
+html.light body.kitchen-portal input[type="date"],
+html.light body.kitchen-portal input[type="month"] {
   color-scheme: light !important;
 }
 
-/* ── Kitchen portal — adaptive (follows system preference) ───────────────── */
-
-/* Kitchen portal light — triggered by system OR manual toggle (handled via html.light below) */
-@media (prefers-color-scheme: light) {
-  html:not(.dark) body.kitchen-portal {
-    background-color: #f7f4ef !important;
-    color: #1c1407 !important;
-    color-scheme: light;
-  }
-
-  html:not(.dark) body.kitchen-portal [class*="bg-[#0d0a04]"],
-  html:not(.dark) body.kitchen-portal [class*="bg-brand-black"] {
-    background-color: #f7f4ef !important;
-  }
-
-  html:not(.dark) body.kitchen-portal [class*="bg-brand-dark"] {
-    background-color: rgba(0, 0, 0, 0.04) !important;
-  }
-
-  html:not(.dark) body.kitchen-portal [class*="bg-brand-brown"],
-  html:not(.dark) body.kitchen-portal [class*="bg-white/[0.02]"] {
-    background-color: #edeae3 !important;
-  }
-
-  html:not(.dark) body.kitchen-portal .text-white {
-    color: #1c1407 !important;
-  }
-
-  html:not(.dark) body.kitchen-portal [class*="text-white/"] {
-    color: #5a4e3c !important;
-  }
-
-  html:not(.dark) body.kitchen-portal [class*="border-white/"] {
-    border-color: #d6d0c6 !important;
-  }
-
-  html:not(.dark) body.kitchen-portal input,
-  html:not(.dark) body.kitchen-portal select,
-  html:not(.dark) body.kitchen-portal textarea {
-    color: #1c1407 !important;
-    background-color: #edeae3 !important;
-    border-color: #d6d0c6 !important;
-  }
-
-  html:not(.dark) body.kitchen-portal input::placeholder {
-    color: #9c8f7e !important;
-  }
-}
 
 /* ── Public website light theme — activated by html.light class (toggle or system) ── */
 
@@ -410,42 +303,3 @@ html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.
   background-color: #ede8e0 !important;
 }
 
-/* Kitchen portal also responds to manual toggle */
-html.light body.kitchen-portal {
-  background-color: #f7f4ef !important;
-  color: #1c1407 !important;
-  color-scheme: light;
-}
-
-html.light body.kitchen-portal [class*="bg-[#0d0a04]"],
-html.light body.kitchen-portal [class*="bg-brand-black"] {
-  background-color: #f7f4ef !important;
-}
-
-html.light body.kitchen-portal [class*="bg-brand-dark"] {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-}
-
-html.light body.kitchen-portal [class*="bg-brand-brown"] {
-  background-color: #edeae3 !important;
-}
-
-html.light body.kitchen-portal .text-white {
-  color: #1c1407 !important;
-}
-
-html.light body.kitchen-portal [class*="text-white/"] {
-  color: #5a4e3c !important;
-}
-
-html.light body.kitchen-portal [class*="border-white/"] {
-  border-color: #d6d0c6 !important;
-}
-
-html.light body.kitchen-portal input,
-html.light body.kitchen-portal select,
-html.light body.kitchen-portal textarea {
-  color: #1c1407 !important;
-  background-color: #edeae3 !important;
-  border-color: #d6d0c6 !important;
-}
