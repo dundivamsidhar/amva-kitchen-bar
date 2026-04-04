@@ -659,7 +659,7 @@ export default function DashboardPage() {
             <button
               onClick={toggle}
               aria-label="Toggle theme"
-              className="w-9 h-9 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+              className="w-9 h-9 flex items-center justify-center border border-stone-300 dark:border-white/10 text-stone-500 dark:text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
             >
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
