@@ -485,6 +485,7 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   // ── Stats ──────────────────────────────────────────────────────────────────
 
   const newCount = orders.filter((o) => o.status === "new").length;
+  const acknowledgedCount = orders.filter((o) => o.status === "acknowledged").length;
   const preparingCount = orders.filter((o) => o.status === "preparing").length;
   const readyCount = orders.filter((o) => o.status === "ready").length;
 
@@ -512,6 +513,12 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
           >
             <Bell className="w-3.5 h-3.5" />
             <span>{newCount} New</span>
+          </div>
+          <div className={`flex items-center gap-2 px-4 py-2 border text-sm font-bold ${
+            acknowledgedCount > 0 ? "border-yellow-500/40 bg-yellow-500/5 text-yellow-400" : "border-white/5 text-white/20"
+          }`}>
+            <CheckCheck className="w-3.5 h-3.5" />
+            <span>{acknowledgedCount} Acknowledged</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 border border-blue-400/20 text-blue-400/70 text-sm font-bold">
             <ChefHat className="w-3.5 h-3.5" />
