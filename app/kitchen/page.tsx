@@ -455,8 +455,10 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => {
     fetchOrders();
 
+    // Use unique channel name to avoid Supabase rejecting duplicate
+    // subscriptions after a page refresh
     const channel = supabase
-      .channel("kitchen-orders")
+      .channel(`kitchen-orders-${Date.now()}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
