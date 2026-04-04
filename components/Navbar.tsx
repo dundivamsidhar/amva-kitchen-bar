@@ -25,13 +25,15 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const lightNavBg = theme === "light"
+    ? "bg-[#fdf9f3]/97 backdrop-blur-md border-b border-stone-200 py-3"
+    : scrolled
+      ? "bg-brand-black/95 backdrop-blur-md border-b border-white/5 py-3"
+      : "bg-transparent py-5";
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-brand-black/95 backdrop-blur-md border-b border-white/5 py-3"
-          : "bg-transparent py-5"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${lightNavBg}`}
     >
       <div className="container-custom flex items-center justify-between">
         {/* Logo */}
@@ -39,7 +41,7 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-brand-gold flex items-center justify-center">
             <UtensilsCrossed className="w-4 h-4 text-brand-black" />
           </div>
-          <span className="font-display text-xl font-bold text-white tracking-wider">
+          <span className={`font-display text-xl font-bold tracking-wider ${theme === "light" ? "text-stone-900" : "text-white"}`}>
             AmVa<span className="text-brand-gold">.</span>
           </span>
         </Link>
@@ -50,7 +52,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-xs font-bold tracking-[0.2em] uppercase text-white/70 hover:text-brand-gold transition-colors duration-200 whitespace-nowrap"
+              className={`text-xs font-bold tracking-[0.2em] uppercase hover:text-brand-gold transition-colors duration-200 whitespace-nowrap ${theme === "light" ? "text-stone-600" : "text-white/70"}`}
             >
               {link.label}
             </Link>
@@ -63,14 +65,14 @@ export default function Navbar() {
           <button
             onClick={toggle}
             aria-label="Toggle theme"
-            className="w-10 h-10 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+            className={`w-10 h-10 flex items-center justify-center border hover:border-brand-gold hover:text-brand-gold transition-colors ${theme === "light" ? "border-stone-300 text-stone-500" : "border-white/10 text-white/60"}`}
           >
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           {/* Cart icon */}
           <Link
             href="/order"
-            className="relative w-10 h-10 flex items-center justify-center border border-white/10 text-white/60 hover:border-brand-gold hover:text-brand-gold transition-colors"
+            className={`relative w-10 h-10 flex items-center justify-center border hover:border-brand-gold hover:text-brand-gold transition-colors ${theme === "light" ? "border-stone-300 text-stone-500" : "border-white/10 text-white/60"}`}
             aria-label="View cart"
           >
             <ShoppingBag className="w-4 h-4" />
@@ -90,10 +92,10 @@ export default function Navbar() {
 
         {/* Mobile right side */}
         <div className="md:hidden flex items-center gap-3">
-          <button onClick={toggle} aria-label="Toggle theme" className="text-white/60 hover:text-brand-gold transition-colors">
+          <button onClick={toggle} aria-label="Toggle theme" className={`hover:text-brand-gold transition-colors ${theme === "light" ? "text-stone-500" : "text-white/60"}`}>
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-          <Link href="/order" className="relative text-white/60" aria-label="View cart">
+          <Link href="/order" className={`relative ${theme === "light" ? "text-stone-500" : "text-white/60"}`} aria-label="View cart">
             <ShoppingBag className="w-5 h-5" />
             {count > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-brand-gold text-brand-black text-[9px] font-bold flex items-center justify-center rounded-full">
@@ -103,7 +105,7 @@ export default function Navbar() {
           </Link>
           <button
             onClick={() => setOpen(!open)}
-            className="text-white p-1"
+            className={`p-1 ${theme === "light" ? "text-stone-700" : "text-white"}`}
             aria-label="Toggle menu"
           >
             {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

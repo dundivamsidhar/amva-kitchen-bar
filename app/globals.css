@@ -234,25 +234,32 @@ html.light body.kitchen-portal input[type="month"] {
 }
 
 
-/* ── Public website light theme — activated by html.light class (toggle or system) ── */
-
 /* ── Public website light theme ───────────────────────────────────────────── */
-/* Strategy: keep dark page sections dark (they look premium that way).        */
-/* Only adapt the navbar glass background, footer, and scrollbar.              */
+/* Dark photo sections stay dark — only navbar, body bg, and footer adapt.     */
 
 /* Scrollbar */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal)::-webkit-scrollbar-track {
-  background: #1a1208;
+  background: #ede8e0;
 }
 
-/* Navbar — glass background when scrolled */
+/* Navbar — cream/warm white when scrolled so toggle is visibly noticeable */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-black/95"],
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) [class*="bg-brand-dark/98"] {
-  background-color: rgba(15, 10, 5, 0.97) !important;
+  background-color: rgba(253, 249, 243, 0.97) !important;
   backdrop-filter: blur(16px);
 }
 
-/* Footer — warm dark instead of pure black */
+/* Navbar text + icons — dark in light mode */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav .text-white,
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav [class*="text-white/"] {
+  color: #1c1407 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) nav [class*="border-white/"] {
+  border-color: rgba(28, 20, 7, 0.2) !important;
+}
+
+/* Footer — warm dark */
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) footer {
   background-color: #120e08 !important;
 }
