@@ -233,6 +233,25 @@ html.light body.kitchen-portal input[type="month"] {
   color-scheme: light !important;
 }
 
+/* Kitchen portal — gold/yellow text → dark in light mode for readability */
+html.light body.kitchen-portal .text-brand-gold,
+html.light body.admin-portal .text-brand-gold,
+html.light body.dashboard-portal .text-brand-gold {
+  color: #1c1407 !important;
+}
+
+html.light body.kitchen-portal [class*="text-yellow-"] {
+  color: #1c1407 !important;
+}
+
+html.light body.kitchen-portal [class*="border-yellow-"] {
+  border-color: #c9b99a !important;
+}
+
+html.light body.kitchen-portal [class*="bg-yellow-"] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
 
 /* ── Public website light theme ───────────────────────────────────────────── */
 
