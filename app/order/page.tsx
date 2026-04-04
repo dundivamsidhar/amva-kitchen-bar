@@ -60,24 +60,40 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
   const [status, setStatus] = useState<string>("new");
 
   useEffect(() => {
-    // Initial fetch
-    (supabase as any).from("orders").select("status").eq("id", orderId).single()
-      .then(({ data }: { data: { status: string } | null }) => { if (data) setStatus(data.status); });
+    let cancelled = false;
 
-    // Live subscription
+    async function fetchStatus() {
+      const { data } = await (supabase as any)
+        .from("orders").select("status").eq("id", orderId).single();
+      if (!cancelled && data) setStatus(data.status);
+    }
+
+    fetchStatus();
+
+    // Poll every 5 seconds as reliable fallback (row-level filter on
+    // postgres_changes requires REPLICA IDENTITY FULL which may not be set)
+    const poll = setInterval(fetchStatus, 5000);
+
+    // Also subscribe without row filter — fire only when our order matches
+    const channelName = `order-status-${orderId}-${Date.now()}`;
     const channel = (supabase as any)
-      .channel(`order-${orderId}`)
+      .channel(channelName)
       .on("postgres_changes", {
         event: "UPDATE",
         schema: "public",
         table: "orders",
-        filter: `id=eq.${orderId}`,
-      }, (payload: { new: { status: string } }) => {
-        setStatus(payload.new.status);
+      }, (payload: { new: { id: string; status: string } }) => {
+        if (!cancelled && payload.new.id === orderId) {
+          setStatus(payload.new.status);
+        }
       })
       .subscribe();
 
-    return () => { (supabase as any).removeChannel(channel); };
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      (supabase as any).removeChannel(channel);
+    };
   }, [orderId]);
 
   const currentIdx = STATUS_ORDER.indexOf(status as typeof STATUS_ORDER[number]);
