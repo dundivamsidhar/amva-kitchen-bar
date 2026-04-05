@@ -32,7 +32,8 @@ export default function RootLayout({
         {/* Prevent flash of wrong theme — runs before paint */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
-            var t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            var saved = localStorage.getItem('amva_theme');
+            var t = saved ? saved : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
             document.documentElement.classList.add(t);
             if (t === 'light') document.documentElement.classList.remove('dark');
             else document.documentElement.classList.remove('light');
