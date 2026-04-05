@@ -81,7 +81,7 @@ export default function Hero() {
 
         {/* Quick info bar */}
         <div
-          className="mt-12 grid grid-cols-3 gap-8 md:gap-16 pt-8 w-full max-w-2xl animate-fade-in"
+          className="mt-12 mb-16 grid grid-cols-3 gap-8 md:gap-16 pt-8 w-full max-w-2xl animate-fade-in"
           style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(28,20,7,0.12)" }}
         >
           <div className="flex flex-col items-center gap-1">

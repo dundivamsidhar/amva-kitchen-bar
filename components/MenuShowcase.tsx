@@ -135,14 +135,8 @@ export default function MenuShowcase() {
   return (
     <section className="relative w-full overflow-hidden" style={{ height: "100svh", background: isDark ? "#000" : "#fdf9f3" }}>
 
-      {/* BG image */}
-      <div
-        className="absolute inset-0"
-        style={{
-          opacity: visible ? 1 : 0,
-          transition: "opacity 0.5s ease",
-        }}
-      >
+      {/* BG image — always visible, image cross-fades, only text fades */}
+      <div className="absolute inset-0">
         <Image
           key={item.image}
           src={item.image}
@@ -152,13 +146,14 @@ export default function MenuShowcase() {
           priority
           sizes="100vw"
           style={{
+            opacity: visible ? 1 : 0.4,
             transform: visible ? "scale(1.04)" : "scale(1)",
-            transition: "transform 4s ease-out",
+            transition: "opacity 0.5s ease, transform 4s ease-out",
           }}
         />
-        <div className="absolute inset-0" style={{ background: isDark ? item.overlay : "rgba(253,249,243,0.45)" }} />
-        <div className="absolute inset-0" style={{ background: isDark ? "linear-gradient(to top, #000, rgba(0,0,0,0.1), rgba(0,0,0,0.3))" : "linear-gradient(to top, rgba(253,249,243,0.95), rgba(253,249,243,0.1), rgba(253,249,243,0.3))" }} />
-        <div className="absolute inset-0" style={{ background: isDark ? "linear-gradient(to right, rgba(0,0,0,0.6), transparent)" : "linear-gradient(to right, rgba(253,249,243,0.5), transparent)" }} />
+        <div className="absolute inset-0" style={{ background: isDark ? item.overlay : "rgba(253,249,243,0.22)" }} />
+        <div className="absolute inset-0" style={{ background: isDark ? "linear-gradient(to top, #000, rgba(0,0,0,0.1), rgba(0,0,0,0.3))" : "linear-gradient(to top, rgba(253,249,243,0.88), rgba(253,249,243,0.05), rgba(253,249,243,0.15))" }} />
+        <div className="absolute inset-0" style={{ background: isDark ? "linear-gradient(to right, rgba(0,0,0,0.6), transparent)" : "linear-gradient(to right, rgba(253,249,243,0.35), transparent)" }} />
       </div>
 
       {/* Noise */}
