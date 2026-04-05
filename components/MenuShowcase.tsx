@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
+import { useTheme } from "@/lib/ThemeContext";
 import toast from "react-hot-toast";
 
 const ITEMS = [
@@ -74,6 +75,8 @@ export default function MenuShowcase() {
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(0);
   const { addToCart } = useCart();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const progressRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -130,7 +133,7 @@ export default function MenuShowcase() {
   }
 
   return (
-    <section className="preserve-dark relative w-full overflow-hidden bg-black" style={{ height: "100svh" }}>
+    <section className="relative w-full overflow-hidden" style={{ height: "100svh", background: isDark ? "#000" : "#fdf9f3" }}>
 
       {/* BG image */}
       <div
@@ -153,9 +156,9 @@ export default function MenuShowcase() {
             transition: "transform 4s ease-out",
           }}
         />
-        <div className="absolute inset-0" style={{ background: item.overlay }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0" style={{ background: isDark ? item.overlay : "rgba(253,249,243,0.45)" }} />
+        <div className="absolute inset-0" style={{ background: isDark ? "linear-gradient(to top, #000, rgba(0,0,0,0.1), rgba(0,0,0,0.3))" : "linear-gradient(to top, rgba(253,249,243,0.95), rgba(253,249,243,0.1), rgba(253,249,243,0.3))" }} />
+        <div className="absolute inset-0" style={{ background: isDark ? "linear-gradient(to right, rgba(0,0,0,0.6), transparent)" : "linear-gradient(to right, rgba(253,249,243,0.5), transparent)" }} />
       </div>
 
       {/* Noise */}
@@ -180,10 +183,10 @@ export default function MenuShowcase() {
 
       {/* COUNTER */}
       <div className="absolute top-28 right-8 md:right-16 z-20 text-right leading-none">
-        <span className="font-display font-black text-white/10" style={{ fontSize: "clamp(4rem,10vw,8rem)" }}>
+        <span className="font-display font-black" style={{ fontSize: "clamp(4rem,10vw,8rem)", color: isDark ? "rgba(255,255,255,0.10)" : "rgba(28,20,7,0.10)" }}>
           {String(idx + 1).padStart(2, "0")}
         </span>
-        <span className="font-display font-black text-white/10 text-2xl md:text-3xl">
+        <span className="font-display font-black text-2xl md:text-3xl" style={{ color: isDark ? "rgba(255,255,255,0.10)" : "rgba(28,20,7,0.10)" }}>
           /{String(ITEMS.length).padStart(2, "0")}
         </span>
       </div>
@@ -194,8 +197,8 @@ export default function MenuShowcase() {
         {/* Line 1 */}
         <div className="overflow-hidden">
           <h1
-            className="font-display font-black text-white leading-none"
-            style={{
+            className="font-display font-black leading-none"
+            style={{ color: isDark ? "#ffffff" : "#1c1407",
               fontSize: "clamp(4.5rem, 14vw, 13rem)",
               transform: visible ? "translateY(0)" : "translateY(110%)",
               opacity: visible ? 1 : 0,
@@ -226,7 +229,8 @@ export default function MenuShowcase() {
 
         {/* Sub */}
         <p
-          className="mt-4 text-white/50 font-light tracking-[0.25em] uppercase text-sm md:text-base"
+          className="mt-4 font-light tracking-[0.25em] uppercase text-sm md:text-base"
+          style={{ color: isDark ? "rgba(255,255,255,0.50)" : "rgba(28,20,7,0.55)" }}
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "translateX(0)" : "translateX(-24px)",
@@ -262,7 +266,8 @@ export default function MenuShowcase() {
 
           <Link
             href="/menu"
-            className="px-7 py-3.5 font-black text-xs tracking-[0.25em] uppercase text-white border-2 border-white/25 hover:border-white transition-colors"
+            className="px-7 py-3.5 font-black text-xs tracking-[0.25em] uppercase border-2 transition-colors"
+            style={{ color: isDark ? "#ffffff" : "#1c1407", borderColor: isDark ? "rgba(255,255,255,0.25)" : "rgba(28,20,7,0.30)" }}
           >
             Full Menu
           </Link>
@@ -284,14 +289,14 @@ export default function MenuShowcase() {
             style={{
               width: i === idx ? "2rem" : "0.45rem",
               height: "0.45rem",
-              background: i === idx ? it.accent : "rgba(255,255,255,0.25)",
+              background: i === idx ? it.accent : (isDark ? "rgba(255,255,255,0.25)" : "rgba(28,20,7,0.20)"),
             }}
           />
         ))}
       </div>
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/5 z-20">
+      <div className="absolute bottom-0 left-0 right-0 h-[3px] z-20" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(28,20,7,0.08)" }}>
         <div
           className="h-full"
           style={{
@@ -307,8 +312,8 @@ export default function MenuShowcase() {
         className="absolute bottom-16 right-8 md:right-16 z-20 flex flex-col items-center gap-1"
         style={{ opacity: visible ? 0.4 : 0, transition: "opacity 0.5s" }}
       >
-        <div className="w-px h-10 bg-white/40 animate-pulse" />
-        <span className="text-white/40 text-[9px] tracking-[0.3em] uppercase rotate-90 mt-2">Scroll</span>
+        <div className="w-px h-10 animate-pulse" style={{ background: isDark ? "rgba(255,255,255,0.40)" : "rgba(28,20,7,0.30)" }} />
+        <span className="text-[9px] tracking-[0.3em] uppercase rotate-90 mt-2" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(28,20,7,0.30)" }}>Scroll</span>
       </div>
     </section>
   );

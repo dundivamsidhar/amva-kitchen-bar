@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTheme } from "@/lib/ThemeContext";
 
 const FOUNDERS = [
   {
@@ -20,14 +21,17 @@ const FOUNDERS = [
 ];
 
 export default function FoundersSection() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <section className="py-24 bg-brand-black overflow-hidden">
+    <section className="py-24 overflow-hidden" style={{ background: isDark ? "#0A0806" : "#fdf9f3" }}>
       <div className="container-custom">
 
         {/* Header */}
         <div className="text-center mb-16 flex flex-col items-center gap-4">
           <p className="section-label">The People Behind AmVa</p>
-          <h2 className="section-title text-white">
+          <h2 className="section-title" style={{ color: isDark ? "#ffffff" : "#1c1407" }}>
             Meet Our
             <br />
             <span className="text-gradient-gold">Founders</span>
@@ -36,12 +40,12 @@ export default function FoundersSection() {
         </div>
 
         {/* Founder cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px max-w-5xl mx-auto" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(28,20,7,0.08)" }}>
           {FOUNDERS.map((founder) => (
-            <div key={founder.name} className="preserve-dark group relative bg-brand-dark overflow-hidden">
+            <div key={founder.name} className="group relative overflow-hidden" style={{ background: isDark ? "#120E09" : "#f5ede0" }}>
 
               {/* Portrait */}
-              <div className="relative h-[520px] overflow-hidden bg-brand-black">
+              <div className="relative h-[520px] overflow-hidden" style={{ background: isDark ? "#0A0806" : "#ede0cc" }}>
                 <Image
                   src={founder.photo}
                   alt={founder.name}
@@ -52,7 +56,9 @@ export default function FoundersSection() {
                 />
                 {/* Fallback pattern when no photo */}
                 <div className="absolute inset-0 flex items-center justify-center"
-                  style={{background: "repeating-linear-gradient(45deg, #1a1208 0px, #1a1208 10px, #0d0a04 10px, #0d0a04 20px)"}}>
+                  style={{ background: isDark
+                    ? "repeating-linear-gradient(45deg, #1a1208 0px, #1a1208 10px, #0d0a04 10px, #0d0a04 20px)"
+                    : "repeating-linear-gradient(45deg, #e8d5b8 0px, #e8d5b8 10px, #dfc9a8 10px, #dfc9a8 20px)" }}>
                   <div className="flex flex-col items-center gap-3 opacity-30">
                     <div className="w-24 h-24 rounded-full border-2 border-brand-gold/40 flex items-center justify-center">
                       <span className="font-display text-4xl font-bold text-brand-gold">
@@ -62,14 +68,17 @@ export default function FoundersSection() {
                     <span className="text-brand-gold/40 text-xs tracking-widest uppercase">Photo coming soon</span>
                   </div>
                 </div>
-                {/* Strong bottom gradient for text legibility */}
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/50 to-transparent" />
+                {/* Bottom gradient for text legibility */}
+                <div className="absolute inset-0" style={{ background: isDark
+                  ? "linear-gradient(to top, #0A0806, rgba(10,8,6,0.5), transparent)"
+                  : "linear-gradient(to top, #f5ede0, rgba(245,237,224,0.5), transparent)" }} />
 
-                {/* Chef coat badge */}
+                {/* Badge */}
                 <div className="absolute top-5 left-5">
-                  <div className="flex items-center gap-2 bg-brand-black/70 backdrop-blur-sm border border-brand-gold/30 px-3 py-1.5">
+                  <div className="flex items-center gap-2 backdrop-blur-sm border px-3 py-1.5"
+                    style={{ background: isDark ? "rgba(10,8,6,0.70)" : "rgba(245,237,224,0.80)", borderColor: "rgba(212,160,23,0.30)" }}>
                     <span className="text-brand-gold text-[10px]">✦</span>
-                    <span className="text-brand-gold/80 text-[10px] font-bold tracking-[0.25em] uppercase">
+                    <span className="text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: isDark ? "rgba(212,160,23,0.80)" : "#8a6d1a" }}>
                       {founder.title.split("&")[1]?.trim() || founder.title}
                     </span>
                   </div>
@@ -77,22 +86,22 @@ export default function FoundersSection() {
 
                 {/* Name + title at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 p-8">
-                  <h3 className="font-display text-3xl font-bold text-white mb-1">
+                  <h3 className="font-display text-3xl font-bold mb-1" style={{ color: isDark ? "#ffffff" : "#1c1407" }}>
                     {founder.name}
                   </h3>
                   <p className="text-brand-gold text-xs font-bold tracking-[0.25em] uppercase mb-4">
                     {founder.title}
                   </p>
                   <div className="w-10 h-px bg-brand-gold mb-4" />
-                  <p className="text-white/60 text-sm leading-relaxed italic">
+                  <p className="text-sm leading-relaxed italic" style={{ color: isDark ? "rgba(255,255,255,0.60)" : "rgba(28,20,7,0.60)" }}>
                     &ldquo;{founder.quote}&rdquo;
                   </p>
                 </div>
               </div>
 
               {/* Detail strip */}
-              <div className="px-8 py-6 border-t border-white/5 bg-brand-dark">
-                <p className="text-white/40 text-sm leading-relaxed">
+              <div className="px-8 py-6 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(28,20,7,0.08)", background: isDark ? "#120E09" : "#f5ede0" }}>
+                <p className="text-sm leading-relaxed" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(28,20,7,0.55)" }}>
                   {founder.detail}
                 </p>
               </div>
@@ -103,7 +112,7 @@ export default function FoundersSection() {
 
         {/* Bottom tagline */}
         <div className="mt-16 text-center">
-          <p className="text-white/20 text-xs tracking-[0.4em] uppercase">
+          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: isDark ? "rgba(255,255,255,0.20)" : "rgba(28,20,7,0.30)" }}>
             One vision · One city · No compromises
           </p>
         </div>
