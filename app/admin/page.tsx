@@ -844,7 +844,10 @@ function ReservationsTab() {
         toast.error(json.error ?? "Failed to update reservation.");
       } else {
         toast.success(`Reservation ${status}.`);
-        await fetchReservations();
+        // Optimistically update local state so UI reflects immediately
+        setReservations((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status } : r))
+        );
       }
     } catch {
       toast.error("Network error. Please try again.");
