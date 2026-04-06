@@ -912,7 +912,7 @@ function ReservationsTab() {
 
             {/* Action buttons */}
             <div className="flex gap-2 flex-wrap">
-              {r.status !== "confirmed" && r.status !== "cancelled" && (
+              {r.status !== "confirmed" && r.status !== "cancelled" && r.status !== "seated" && (
                 <button
                   onClick={() => updateStatus(r.id, "confirmed")}
                   disabled={updatingId === r.id}
