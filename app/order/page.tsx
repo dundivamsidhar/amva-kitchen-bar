@@ -214,6 +214,26 @@ export default function OrderPage() {
     );
 
     if (itemsError) throw itemsError;
+
+    // Send order notification email to restaurant (fire and forget)
+    fetch("/api/send-order-confirmation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: order.id,
+        customerName: customerName || null,
+        tableNumber,
+        items: cart.map((c) => ({
+          name: c.item.name,
+          quantity: c.quantity,
+          price: c.item.price,
+          notes: c.notes || null,
+        })),
+        total,
+        paymentMethod,
+      }),
+    }).catch(() => {}); // silently ignore email errors
+
     return order.id;
   }
 

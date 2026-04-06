@@ -6,6 +6,7 @@ import FloatingCart from "@/components/FloatingCart";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/lib/CartContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "AmVa Kitchen & Bar — Hyderabad",
@@ -68,6 +69,7 @@ export default function RootLayout({
             />
           </CartProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

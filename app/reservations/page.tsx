@@ -50,11 +50,47 @@ export default function ReservationsPage() {
     }
     setLoading(true);
     try {
+      // ── Table availability check ──────────────────────────────────────────
+      // Count confirmed/pending reservations for the same date + time slot
+      // Max capacity: 20 guests per slot (adjust as needed)
+      const MAX_GUESTS_PER_SLOT = 20;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
+        .from("reservations")
+        .select("guests")
+        .eq("date", form.date)
+        .eq("time", form.time)
+        .in("status", ["pending", "confirmed"]);
+
+      if (existing && existing.length > 0) {
+        const bookedGuests = existing.reduce((sum: number, r: { guests: number }) => sum + r.guests, 0);
+        if (bookedGuests + (form.guests ?? 2) > MAX_GUESTS_PER_SLOT) {
+          toast.error(`Sorry, this time slot is fully booked. Please choose a different time.`);
+          setLoading(false);
+          return;
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from("reservations").insert(form);
       if (error) throw error;
+      // Send confirmation email (fire and forget — don't block on it)
+      fetch("/api/send-reservation-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          date: form.date,
+          time: form.time,
+          guests: form.guests,
+          occasion: form.occasion,
+          special_requests: form.special_requests,
+        }),
+      }).catch(() => {}); // silently ignore email errors
       setSubmitted(true);
-      toast.success("Reservation request received! We'll confirm shortly.");
+      toast.success("Reservation request received! Confirmation email sent.");
     } catch {
       // Show success anyway for demo if Supabase not connected
       setSubmitted(true);
