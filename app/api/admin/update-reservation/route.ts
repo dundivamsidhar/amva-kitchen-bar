@@ -19,14 +19,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("reservations")
     .update({ status })
-    .eq("id", id);
+    .eq("id", id)
+    .select();
 
   if (error) {
     console.error("update-reservation error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // If no rows returned, RLS silently blocked the update (missing service role key)
+  if (!data || data.length === 0) {
+    console.error("update-reservation: 0 rows updated — check SUPABASE_SERVICE_ROLE_KEY in Vercel env vars");
+    return NextResponse.json(
+      { error: "Update blocked — SUPABASE_SERVICE_ROLE_KEY not configured in Vercel." },
+      { status: 403 }
+    );
   }
 
   return NextResponse.json({ ok: true });
