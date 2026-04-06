@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import toast from "react-hot-toast";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -817,6 +818,7 @@ function ReservationsTab() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"upcoming" | "all">("upcoming");
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const fetchReservations = useCallback(async () => {
     const query = (supabase as any).from("reservations").select("*").order("date", { ascending: true }).order("time", { ascending: true });
@@ -830,8 +832,25 @@ function ReservationsTab() {
   useEffect(() => { fetchReservations(); }, [fetchReservations]);
 
   async function updateStatus(id: number, status: string) {
-    await (supabase as any).from("reservations").update({ status }).eq("id", id);
-    fetchReservations();
+    setUpdatingId(id);
+    try {
+      const res = await fetch("/api/admin/update-reservation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to update reservation.");
+      } else {
+        toast.success(`Reservation ${status}.`);
+        await fetchReservations();
+      }
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   const statusStyle: Record<string, string> = {
@@ -891,21 +910,36 @@ function ReservationsTab() {
             {/* Action buttons */}
             <div className="flex gap-2 flex-wrap">
               {r.status !== "confirmed" && r.status !== "cancelled" && (
-                <button onClick={() => updateStatus(r.id, "confirmed")}
-                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirm
+                <button
+                  onClick={() => updateStatus(r.id, "confirmed")}
+                  disabled={updatingId === r.id}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {updatingId === r.id
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                    : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Confirm
                 </button>
               )}
               {r.status === "confirmed" && (
-                <button onClick={() => updateStatus(r.id, "seated")}
-                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-500 transition-colors">
-                  <Clock className="w-3.5 h-3.5" /> Mark Seated
+                <button
+                  onClick={() => updateStatus(r.id, "seated")}
+                  disabled={updatingId === r.id}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {updatingId === r.id
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                    : <Clock className="w-3.5 h-3.5" />}
+                  Mark Seated
                 </button>
               )}
               {r.status !== "cancelled" && (
-                <button onClick={() => updateStatus(r.id, "cancelled")}
-                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 border border-white/10 text-white/40 hover:border-red-500/40 hover:text-red-400 transition-colors">
-                  <XCircle className="w-3.5 h-3.5" /> Cancel
+                <button
+                  onClick={() => updateStatus(r.id, "cancelled")}
+                  disabled={updatingId === r.id}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 border border-white/10 text-white/40 hover:border-red-500/40 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {updatingId === r.id
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-red-400 rounded-full animate-spin inline-block" />
+                    : <XCircle className="w-3.5 h-3.5" />}
+                  Cancel
                 </button>
               )}
             </div>
