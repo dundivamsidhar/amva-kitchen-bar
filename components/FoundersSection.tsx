@@ -45,7 +45,7 @@ export default function FoundersSection() {
             <div key={founder.name} className="group relative overflow-hidden" style={{ background: isDark ? "#120E09" : "#f5ede0" }}>
 
               {/* Portrait */}
-              <div className="relative h-[520px] overflow-hidden" style={{ background: isDark ? "#0A0806" : "#ede0cc" }}>
+              <div className="relative h-[320px] sm:h-[420px] md:h-[520px] overflow-hidden" style={{ background: isDark ? "#0A0806" : "#ede0cc" }}>
                 <Image
                   src={founder.photo}
                   alt={founder.name}
@@ -77,15 +77,15 @@ export default function FoundersSection() {
                 <div className="absolute top-5 left-5">
                   <div className="flex items-center gap-2 backdrop-blur-sm border px-3 py-1.5"
                     style={{ background: isDark ? "rgba(10,8,6,0.70)" : "rgba(245,237,224,0.80)", borderColor: "rgba(212,160,23,0.30)" }}>
-                    <span className="text-brand-gold text-[10px]">✦</span>
-                    <span className="text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: isDark ? "rgba(212,160,23,0.80)" : "#8a6d1a" }}>
+                    <span className="text-brand-gold text-xs">✦</span>
+                    <span className="text-xs font-bold tracking-[0.25em] uppercase" style={{ color: isDark ? "rgba(212,160,23,0.80)" : "#8a6d1a" }}>
                       {founder.title.split("&")[1]?.trim() || founder.title}
                     </span>
                   </div>
                 </div>
 
                 {/* Name + title at bottom */}
-                <div className="absolute bottom-0 left-0 right-0 p-8">
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
                   <h3 className="font-display text-3xl font-bold mb-1" style={{ color: isDark ? "#ffffff" : "#1c1407" }}>
                     {founder.name}
                   </h3>
@@ -100,7 +100,7 @@ export default function FoundersSection() {
               </div>
 
               {/* Detail strip */}
-              <div className="px-8 py-6 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(28,20,7,0.08)", background: isDark ? "#120E09" : "#f5ede0" }}>
+              <div className="px-4 sm:px-8 py-4 sm:py-6 border-t" style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(28,20,7,0.08)", background: isDark ? "#120E09" : "#f5ede0" }}>
                 <p className="text-sm leading-relaxed" style={{ color: isDark ? "rgba(255,255,255,0.40)" : "rgba(28,20,7,0.55)" }}>
                   {founder.detail}
                 </p>

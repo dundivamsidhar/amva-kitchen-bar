@@ -160,7 +160,7 @@ export default function MenuShowcase() {
       <div className="absolute inset-0 bg-noise opacity-20 pointer-events-none z-10" />
 
       {/* TAG */}
-      <div className="absolute top-28 left-8 md:left-16 z-20">
+      <div className="absolute top-20 sm:top-28 left-4 sm:left-8 md:left-16 z-20">
         <span
           className="text-[10px] md:text-xs font-black tracking-[0.5em] uppercase px-3 py-1.5 border-2"
           style={{
@@ -177,7 +177,7 @@ export default function MenuShowcase() {
       </div>
 
       {/* COUNTER */}
-      <div className="absolute top-28 right-8 md:right-16 z-20 text-right leading-none">
+      <div className="absolute top-20 sm:top-28 right-4 sm:right-8 md:right-16 z-20 text-right leading-none">
         <span className="font-display font-black" style={{ fontSize: "clamp(4rem,10vw,8rem)", color: isDark ? "rgba(255,255,255,0.10)" : "rgba(28,20,7,0.10)" }}>
           {String(idx + 1).padStart(2, "0")}
         </span>
@@ -187,14 +187,14 @@ export default function MenuShowcase() {
       </div>
 
       {/* MAIN TEXT */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end pb-32 md:pb-24 px-8 md:px-16">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end pb-32 md:pb-24 px-4 sm:px-8 md:px-16">
 
         {/* Line 1 */}
         <div className="overflow-hidden">
           <h1
             className="font-display font-black leading-none"
             style={{ color: isDark ? "#ffffff" : "#1c1407",
-              fontSize: "clamp(4.5rem, 14vw, 13rem)",
+              fontSize: "clamp(2.5rem, 14vw, 13rem)",
               transform: visible ? "translateY(0)" : "translateY(110%)",
               opacity: visible ? 1 : 0,
               transition: "transform 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s, opacity 0.3s ease 0.05s",
@@ -210,7 +210,7 @@ export default function MenuShowcase() {
           <h1
             className="font-display font-black leading-none"
             style={{
-              fontSize: "clamp(4.5rem, 14vw, 13rem)",
+              fontSize: "clamp(2.5rem, 14vw, 13rem)",
               color: item.accent,
               transform: visible ? "translateY(0)" : "translateY(110%)",
               opacity: visible ? 1 : 0,
