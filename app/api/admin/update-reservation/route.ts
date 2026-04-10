@@ -19,9 +19,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
+  const updatePayload: Record<string, string> = { status };
+  if (status === "seated") {
+    updatePayload.seated_at = new Date().toISOString();
+  }
+
   const { data, error } = await supabaseAdmin
     .from("reservations")
-    .update({ status })
+    .update(updatePayload)
     .eq("id", id)
     .select();
 

@@ -812,6 +812,39 @@ interface Reservation {
   email: string | null;
   notes: string | null;
   status: string;
+  seated_at: string | null;
+}
+
+function SeatedTimer({ seatedAt }: { seatedAt: string }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = new Date(seatedAt).getTime();
+    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [seatedAt]);
+
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  const display = h > 0
+    ? `${h}h ${String(m).padStart(2, "0")}m`
+    : `${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+
+  const color = elapsed < 30 * 60
+    ? "text-green-400 border-green-500/30 bg-green-500/10"
+    : elapsed < 60 * 60
+    ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
+    : "text-red-400 border-red-500/30 bg-red-500/10";
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-mono font-bold border px-2 py-1 ${color}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+      {display}
+    </span>
+  );
 }
 
 function ReservationsTab() {
@@ -846,7 +879,11 @@ function ReservationsTab() {
         toast.success(`Reservation ${status}.`);
         // Optimistically update local state so UI reflects immediately
         setReservations((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, status } : r))
+          prev.map((r) =>
+            r.id === id
+              ? { ...r, status, seated_at: status === "seated" ? new Date().toISOString() : r.seated_at }
+              : r
+          )
         );
       }
     } catch {
@@ -905,9 +942,14 @@ function ReservationsTab() {
                 )}
                 {r.notes && <p className="text-yellow-400/70 text-xs mt-1">Note: {r.notes}</p>}
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${statusStyle[r.status] ?? "border-white/10 text-white/30"}`}>
-                {r.status}
-              </span>
+              <div className="flex flex-col items-end gap-1.5">
+                <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${statusStyle[r.status] ?? "border-white/10 text-white/30"}`}>
+                  {r.status}
+                </span>
+                {r.status === "seated" && r.seated_at && (
+                  <SeatedTimer seatedAt={r.seated_at} />
+                )}
+              </div>
             </div>
 
             {/* Action buttons */}
