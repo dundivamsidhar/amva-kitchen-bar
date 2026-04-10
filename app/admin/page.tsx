@@ -373,7 +373,71 @@ interface Order {
   total: number;
   payment_method?: string | null;
   created_at: string;
+  acknowledged_at: string | null;
+  preparing_at: string | null;
+  ready_at: string | null;
+  served_at: string | null;
   order_items: OrderItem[];
+}
+
+function diffLabel(from: string, to: string): string {
+  const secs = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 1000);
+  if (secs < 60) return `${secs}s`;
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
+function OrderTimeline({ order }: { order: Order }) {
+  const steps = [
+    { key: "ordered",      label: "Order Placed",   ts: order.created_at,       icon: "🧾", color: "text-white/60" },
+    { key: "acknowledged", label: "Acknowledged",   ts: order.acknowledged_at,  icon: "👀", color: "text-yellow-400" },
+    { key: "preparing",    label: "Cooking Started", ts: order.preparing_at,    icon: "🍳", color: "text-blue-400" },
+    { key: "ready",        label: "Ready",           ts: order.ready_at,         icon: "✅", color: "text-green-400" },
+    { key: "served",       label: "Served",          ts: order.served_at,        icon: "🍽️", color: "text-brand-gold" },
+  ];
+
+  const totalSecs = order.served_at
+    ? Math.round((new Date(order.served_at).getTime() - new Date(order.created_at).getTime()) / 1000)
+    : null;
+
+  const totalLabel = totalSecs !== null
+    ? totalSecs < 60 ? `${totalSecs}s` : `${Math.floor(totalSecs / 60)}m ${totalSecs % 60}s`
+    : null;
+
+  return (
+    <div className="border-t border-white/5 pt-3 mt-1">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Order Timeline</p>
+      <div className="flex flex-wrap gap-x-0 gap-y-1">
+        {steps.map((step, i) => {
+          const prev = i > 0 ? steps[i - 1] : null;
+          const diff = step.ts && prev?.ts ? diffLabel(prev.ts, step.ts) : null;
+          return (
+            <div key={step.key} className="flex items-center gap-1">
+              {i > 0 && (
+                <div className="flex items-center gap-1 mx-1">
+                  <span className="text-white/15">──</span>
+                  {diff && <span className="text-[10px] text-white/30 font-mono">+{diff}</span>}
+                  <span className="text-white/15">──</span>
+                </div>
+              )}
+              <div className={`flex flex-col items-center ${!step.ts ? "opacity-25" : ""}`}>
+                <span className="text-sm">{step.icon}</span>
+                <span className={`text-[10px] font-bold ${step.color}`}>{step.label}</span>
+                <span className="text-[10px] text-white/30 font-mono">
+                  {step.ts ? new Date(step.ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        {totalLabel && (
+          <div className="ml-auto flex items-center gap-1.5 text-xs font-bold text-brand-gold border border-brand-gold/30 px-2 py-1 bg-brand-gold/5">
+            ⏱ Total: {totalLabel}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface MenuItem {
@@ -500,8 +564,20 @@ function OrdersTab() {
   }, [fetchOrders]);
 
   async function changeStatus(orderId: string, status: string) {
-    await (supabase as any).from("orders").update({ status }).eq("id", orderId);
-    fetchOrders();
+    const res = await fetch("/api/admin/update-order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: orderId, status }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      toast.error(json.error ?? "Failed to update order.");
+    } else {
+      // Optimistically update local state with returned timestamps
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, ...json.updated } : o))
+      );
+    }
   }
 
   if (loading) {
@@ -565,6 +641,9 @@ function OrdersTab() {
               </span>
             ))}
           </div>
+
+          {/* Order Timeline */}
+          <OrderTimeline order={order} />
 
           {/* Status change */}
           <div className="flex items-center gap-2">

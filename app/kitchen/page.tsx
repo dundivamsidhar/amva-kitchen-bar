@@ -222,11 +222,12 @@ function OrderCard({
     if (!cfg.next) return;
     const nextStatus = cfg.next;
     setUpdating(true);
-    const { error } = await (supabase as any)
-      .from("orders")
-      .update({ status: nextStatus })
-      .eq("id", order.id);
-    if (!error) {
+    const res = await fetch("/api/admin/update-order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: order.id, status: nextStatus }),
+    });
+    if (res.ok) {
       toast.success(`Order #${order.table_number} → ${STATUS_CONFIG[nextStatus].label}`);
       onStatusChange();
     } else {
@@ -237,10 +238,11 @@ function OrderCard({
 
   async function cancelOrder() {
     setUpdating(true);
-    await (supabase as any)
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", order.id);
+    await fetch("/api/admin/update-order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: order.id, status: "cancelled" }),
+    });
     onStatusChange();
     setUpdating(false);
   }
