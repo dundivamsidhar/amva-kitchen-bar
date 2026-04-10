@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { Minus, Plus, Trash2, ChefHat, ShoppingBag, CreditCard, Smartphone, Banknote, CheckCircle2, Clock, UtensilsCrossed, Bell, Truck } from "lucide-react";
+import { Minus, Plus, Trash2, ChefHat, ShoppingBag, CreditCard, Smartphone, Banknote, CheckCircle2, Clock, UtensilsCrossed, Bell, Truck, Star } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { supabase } from "@/lib/supabase";
@@ -52,12 +52,122 @@ const STATUS_STEPS = [
 
 const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
 
-function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
+function StarRating({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex items-center justify-between gap-3 py-3 border-b border-white/5 last:border-0">
+      <span className="text-white/50 text-sm font-bold uppercase tracking-widest w-24 shrink-0">{label}</span>
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onChange(i)}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(0)}
+            className="w-9 h-9 flex items-center justify-center transition-transform active:scale-110"
+          >
+            <Star
+              className="w-6 h-6 transition-colors"
+              fill={(hovered || value) >= i ? "#D4A017" : "transparent"}
+              stroke={(hovered || value) >= i ? "#D4A017" : "rgba(255,255,255,0.2)"}
+            />
+          </button>
+        ))}
+      </div>
+      <span className="text-white/20 text-xs w-8 text-right shrink-0">
+        {value > 0 ? ["", "😕", "😐", "🙂", "😊", "🤩"][value] : ""}
+      </span>
+    </div>
+  );
+}
+
+function FeedbackForm({ orderId, onDone }: { orderId: string; onDone: () => void }) {
+  const [food, setFood] = useState(0);
+  const [service, setService] = useState(0);
+  const [ambience, setAmbience] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await fetch("/api/submit-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          foodRating: food || null,
+          serviceRating: service || null,
+          ambienceRating: ambience || null,
+          comment: comment.trim() || null,
+        }),
+      });
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="w-full border border-brand-gold/20 bg-brand-gold/5 p-6 flex flex-col items-center gap-3 text-center">
+        <span className="text-3xl">🙏</span>
+        <p className="font-display text-xl font-bold text-white">Thank you for your feedback!</p>
+        <p className="text-white/40 text-sm">Your thoughts help us improve every day.</p>
+        <button onClick={onDone} className="btn-primary text-xs mt-2">Done</button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full border border-white/10 bg-white/[0.02] p-6 flex flex-col gap-6">
+      <div className="text-center">
+        <p className="font-display text-xl font-bold text-white">How was your experience?</p>
+        <p className="text-white/40 text-sm mt-1">Rate your meal & share your thoughts</p>
+      </div>
+
+      {/* Star ratings — vertical rows, easy to tap on mobile */}
+      <div className="flex flex-col">
+        <StarRating value={food} onChange={setFood} label="Food" />
+        <StarRating value={service} onChange={setService} label="Service" />
+        <StarRating value={ambience} onChange={setAmbience} label="Ambience" />
+      </div>
+
+      {/* Comment */}
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Tell us more — what did you love? What can we improve?"
+        rows={3}
+        className="w-full bg-brand-dark border border-white/10 text-white placeholder:text-white/20 text-sm p-4 resize-none focus:outline-none focus:border-brand-gold/50 transition-colors"
+      />
+
+      <div className="flex gap-3 justify-end">
+        <button type="button" onClick={onDone} className="btn-ghost text-xs">Skip</button>
+        <button
+          type="submit"
+          disabled={submitting || (!food && !service && !ambience && !comment.trim())}
+          className="btn-primary text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Submitting…" : "Submit Feedback"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, onOrderMore }: {
   orderId: string;
-  tableNumber: number;
+  tableNumber: number | string;
   paymentMethod: string;
+  onNewOrder: () => void;
+  onOrderMore: () => void;
 }) {
   const [status, setStatus] = useState<string>("new");
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +208,14 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
 
   const currentIdx = STATUS_ORDER.indexOf(status as typeof STATUS_ORDER[number]);
   const isServed = status === "served";
+
+  // Auto-show feedback form when order is served
+  useEffect(() => {
+    if (isServed) {
+      const timer = setTimeout(() => setShowFeedback(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isServed]);
 
   return (
     <div className="min-h-screen bg-brand-black flex items-center justify-center px-4 pt-20 pb-12">
@@ -158,10 +276,32 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
           })}
         </div>
 
+        {/* Feedback form — shown 1.5s after served */}
+        {isServed && showFeedback && (
+          <FeedbackForm
+            orderId={orderId}
+            onDone={onNewOrder}
+          />
+        )}
+
         <div className="flex gap-3 flex-wrap justify-center">
-          <Link href="/menu" className="btn-primary text-xs">Order More</Link>
+          {!isServed && (
+            <button onClick={onOrderMore} className="btn-primary text-xs">
+              + Order More
+            </button>
+          )}
+          {isServed && !showFeedback && (
+            <button onClick={onNewOrder} className="btn-primary text-xs">
+              New Order
+            </button>
+          )}
           <Link href="/" className="btn-ghost text-xs">Back to Home</Link>
         </div>
+        {!isServed && (
+          <p className="text-white/25 text-xs text-center mt-2">
+            Clicking &ldquo;Order More&rdquo; lets you add items to a new order for the same table
+          </p>
+        )}
       </div>
     </div>
   );
@@ -181,6 +321,40 @@ export default function OrderPage() {
   const [upiConfirming, setUpiConfirming] = useState(false);
   const [tableError, setTableError] = useState(false);
   const tableInputRef = useRef<HTMLInputElement>(null);
+
+  // Restore order session from localStorage on mount
+  useEffect(() => {
+    try {
+      // Check active order session first
+      const saved = localStorage.getItem("amva_order_session");
+      if (saved) {
+        const { id, table, payment, name } = JSON.parse(saved);
+        if (id && table) {
+          setOrderId(id);
+          setTableNumber(String(table));
+          setPaymentMethod(payment ?? "cash");
+          if (name) setCustomerName(name);
+          return;
+        }
+      }
+      // No active session — form shows empty (fresh order)
+    } catch { /* ignore */ }
+  }, []);
+
+  // Helper to save/clear order session
+  function saveOrderSession(id: string, table: string, payment: PaymentMethod) {
+    localStorage.setItem("amva_order_session", JSON.stringify({ id, table, payment, name: customerName }));
+  }
+  function clearOrderSession() {
+    localStorage.removeItem("amva_order_session");
+  }
+  function startReorder() {
+    // tableNumber, customerName, paymentMethod are already in React state —
+    // just clear the session and show the form. No navigation needed.
+    clearOrderSession();
+    setOrderId(null);
+    // tableNumber, customerName, paymentMethod stay as-is (already set)
+  }
 
   // ── Save order to Supabase after payment confirmed ──────────────────────────
   async function saveOrderToKitchen(paymentRef: string) {
@@ -214,6 +388,26 @@ export default function OrderPage() {
     );
 
     if (itemsError) throw itemsError;
+
+    // Send order notification email to restaurant (fire and forget)
+    fetch("/api/send-order-confirmation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: order.id,
+        customerName: customerName || null,
+        tableNumber,
+        items: cart.map((c) => ({
+          name: c.item.name,
+          quantity: c.quantity,
+          price: c.item.price,
+          notes: c.notes || null,
+        })),
+        total,
+        paymentMethod,
+      }),
+    }).catch(() => {}); // silently ignore email errors
+
     return order.id;
   }
 
@@ -232,6 +426,7 @@ export default function OrderPage() {
       toast("Demo mode — add Razorpay keys to go live", { icon: "ℹ️" });
       const id = await saveOrderToKitchen("demo");
       setOrderId(id);
+      saveOrderSession(id, tableNumber, paymentMethod);
       clearCart();
       toast.success("Order sent to kitchen!");
       return;
@@ -250,6 +445,7 @@ export default function OrderPage() {
         try {
           const id = await saveOrderToKitchen(response.razorpay_payment_id);
           setOrderId(id);
+          saveOrderSession(id, tableNumber, paymentMethod);
           clearCart();
           toast.success("Payment successful! Order sent to kitchen.");
         } catch {
@@ -279,6 +475,7 @@ export default function OrderPage() {
       if (paymentMethod === "cash") {
         const id = await saveOrderToKitchen("cash");
         setOrderId(id);
+        saveOrderSession(id, tableNumber, paymentMethod);
         clearCart();
         toast.success("Order sent to kitchen!");
         setPlacing(false);
@@ -303,6 +500,7 @@ export default function OrderPage() {
       const id = await saveOrderToKitchen("upi");
       setShowUpiModal(false);
       setOrderId(id);
+      saveOrderSession(id, tableNumber, paymentMethod);
       clearCart();
       toast.success("Order confirmed! Sent to kitchen.");
     } catch {
@@ -318,6 +516,18 @@ export default function OrderPage() {
       orderId={orderId}
       tableNumber={tableNumber}
       paymentMethod={paymentMethod}
+      onNewOrder={() => {
+        clearOrderSession();
+        setOrderId(null);
+        setTableNumber("");
+        setCustomerName("");
+        setOrderNotes("");
+      }}
+      onOrderMore={() => {
+        startReorder();
+        // Form shows immediately with pre-filled table/name — no navigation needed
+        // Customer uses "Browse Menu" from the empty cart to add items
+      }}
     />;
   }
 
@@ -347,7 +557,14 @@ export default function OrderPage() {
           {cart.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center gap-6">
               <ShoppingBag className="w-12 h-12 text-white/10" />
-              <p className="text-white/30 text-lg">Your order is empty</p>
+              {tableNumber ? (
+                <>
+                  <p className="text-white/50 text-lg">Table <span className="text-brand-gold font-bold">{tableNumber}</span> — ready for your next order</p>
+                  <p className="text-white/30 text-sm">Browse the menu and add items, then come back to place your order</p>
+                </>
+              ) : (
+                <p className="text-white/30 text-lg">Your order is empty</p>
+              )}
               <Link href="/menu" className="btn-primary text-xs">Browse Menu</Link>
             </div>
           ) : (
@@ -369,11 +586,11 @@ export default function OrderPage() {
                       </button>
                     </div>
                     <div className="flex items-center gap-3 mt-3">
-                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)} className="w-7 h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
+                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)} className="w-9 h-9 sm:w-7 sm:h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-white font-bold w-5 text-center">{cartItem.quantity}</span>
-                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)} className="w-7 h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
+                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)} className="w-9 h-9 sm:w-7 sm:h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>

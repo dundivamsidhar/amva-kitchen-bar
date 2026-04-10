@@ -26,7 +26,7 @@ export default function CocktailBanner() {
 
   return (
     <section
-      className="relative py-28 overflow-hidden"
+      className="preserve-dark relative py-28 overflow-hidden"
       style={{
         backgroundImage: `url('https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=1800&q=80')`,
         backgroundSize: "cover",

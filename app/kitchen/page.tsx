@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   ChefHat,
@@ -222,11 +222,12 @@ function OrderCard({
     if (!cfg.next) return;
     const nextStatus = cfg.next;
     setUpdating(true);
-    const { error } = await (supabase as any)
-      .from("orders")
-      .update({ status: nextStatus })
-      .eq("id", order.id);
-    if (!error) {
+    const res = await fetch("/api/admin/update-order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: order.id, status: nextStatus }),
+    });
+    if (res.ok) {
       toast.success(`Order #${order.table_number} → ${STATUS_CONFIG[nextStatus].label}`);
       onStatusChange();
     } else {
@@ -237,10 +238,11 @@ function OrderCard({
 
   async function cancelOrder() {
     setUpdating(true);
-    await (supabase as any)
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", order.id);
+    await fetch("/api/admin/update-order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: order.id, status: "cancelled" }),
+    });
     onStatusChange();
     setUpdating(false);
   }
@@ -430,8 +432,13 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   const { theme, toggle } = useTheme();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Keep a ref so fetchOrders always reads the latest view without being
+  // re-created on every view change (which would tear down the subscription).
+  const viewRef = useRef(view);
+  viewRef.current = view;
+
   const fetchOrders = useCallback(async () => {
-    const statuses = view === "active" ? ACTIVE_STATUSES : ALL_STATUSES;
+    const statuses = viewRef.current === "active" ? ACTIVE_STATUSES : ALL_STATUSES;
     const { data, error } = await (supabase as any)
       .from("orders")
       .select("*, order_items(*)")
@@ -454,13 +461,22 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
     if (count !== null) setServedToday(count);
 
     setLoading(false);
-  }, [view]);
+  }, []); // stable — reads view via ref, never needs to be recreated
 
+  // Subscribe once on mount; channel is never torn down on view changes.
   useEffect(() => {
     fetchOrders();
 
-    // Use unique channel name to avoid Supabase rejecting duplicate
-    // subscriptions after a page refresh
+    // Poll every 3s as reliable fallback when realtime subscription lags
+    const poll = setInterval(() => fetchOrders(), 3000);
+
+    // Debounce so rapid INSERT events (orders + order_items) collapse into one fetch
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedFetch = (delay = 400) => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchOrders(), delay);
+    };
+
     const channel = supabase
       .channel(`kitchen-orders-${Date.now()}`)
       .on(
@@ -472,21 +488,31 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
               `🔔 New order — Table ${(payload.new as Order).table_number}!`,
               { duration: 6000, style: { fontWeight: "bold", fontSize: "15px" } }
             );
+            // Wait 500ms for order_items to finish inserting, then fetch
+            debouncedFetch(500);
+          } else {
+            debouncedFetch(200);
           }
-          fetchOrders();
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_items" },
-        () => { fetchOrders(); }
+        () => { debouncedFetch(200); }
       )
       .subscribe();
 
     return () => {
+      clearInterval(poll);
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders]); // fetchOrders is now stable, so this runs only once
+
+  // Re-fetch immediately whenever the view tab changes.
+  useEffect(() => {
+    fetchOrders();
+  }, [view, fetchOrders]);
 
   // ── Stats ──────────────────────────────────────────────────────────────────
 
