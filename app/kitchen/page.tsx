@@ -467,9 +467,12 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => {
     fetchOrders();
 
+    // Poll every 3s as reliable fallback when realtime subscription lags
+    const poll = setInterval(() => fetchOrders(), 3000);
+
     // Debounce so rapid INSERT events (orders + order_items) collapse into one fetch
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    const debouncedFetch = (delay = 600) => {
+    const debouncedFetch = (delay = 400) => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => fetchOrders(), delay);
     };
@@ -485,21 +488,22 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
               `🔔 New order — Table ${(payload.new as Order).table_number}!`,
               { duration: 6000, style: { fontWeight: "bold", fontSize: "15px" } }
             );
-            // Wait 800ms for order_items to be inserted before fetching
-            debouncedFetch(800);
+            // Wait 500ms for order_items to finish inserting, then fetch
+            debouncedFetch(500);
           } else {
-            debouncedFetch(300);
+            debouncedFetch(200);
           }
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_items" },
-        () => { debouncedFetch(300); }
+        () => { debouncedFetch(200); }
       )
       .subscribe();
 
     return () => {
+      clearInterval(poll);
       if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };

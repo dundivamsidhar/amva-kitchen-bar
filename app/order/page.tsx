@@ -55,9 +55,9 @@ const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
 function StarRating({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
   const [hovered, setHovered] = useState(0);
   return (
-    <div className="flex flex-col items-center gap-2">
-      <span className="text-white/40 text-xs font-bold uppercase tracking-widest">{label}</span>
-      <div className="flex gap-1">
+    <div className="flex items-center justify-between gap-3 py-3 border-b border-white/5 last:border-0">
+      <span className="text-white/50 text-sm font-bold uppercase tracking-widest w-24 shrink-0">{label}</span>
+      <div className="flex gap-1.5">
         {[1, 2, 3, 4, 5].map((i) => (
           <button
             key={i}
@@ -65,16 +65,19 @@ function StarRating({ value, onChange, label }: { value: number; onChange: (v: n
             onClick={() => onChange(i)}
             onMouseEnter={() => setHovered(i)}
             onMouseLeave={() => setHovered(0)}
-            className="p-1 transition-transform active:scale-110"
+            className="w-9 h-9 flex items-center justify-center transition-transform active:scale-110"
           >
             <Star
-              className="w-7 h-7 transition-colors"
+              className="w-6 h-6 transition-colors"
               fill={(hovered || value) >= i ? "#D4A017" : "transparent"}
               stroke={(hovered || value) >= i ? "#D4A017" : "rgba(255,255,255,0.2)"}
             />
           </button>
         ))}
       </div>
+      <span className="text-white/20 text-xs w-8 text-right shrink-0">
+        {value > 0 ? ["", "😕", "😐", "🙂", "😊", "🤩"][value] : ""}
+      </span>
     </div>
   );
 }
@@ -126,8 +129,8 @@ function FeedbackForm({ orderId, onDone }: { orderId: string; onDone: () => void
         <p className="text-white/40 text-sm mt-1">Rate your meal & share your thoughts</p>
       </div>
 
-      {/* Star ratings */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Star ratings — vertical rows, easy to tap on mobile */}
+      <div className="flex flex-col">
         <StarRating value={food} onChange={setFood} label="Food" />
         <StarRating value={service} onChange={setService} label="Service" />
         <StarRating value={ambience} onChange={setAmbience} label="Ambience" />
