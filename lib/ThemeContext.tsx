@@ -27,18 +27,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const sys = (): Theme => (mq.matches ? "light" : "dark");
 
-    // On mount: use system preference (ignore any stale localStorage value)
-    const initial = sys();
+    // On mount: use saved preference if present, otherwise fall back to system
+    const saved = localStorage.getItem("amva_theme") as Theme | null;
+    const initial = saved ?? sys();
     setTheme(initial);
     applyTheme(initial);
-    // Clear any old saved override so system preference stays in control
-    localStorage.removeItem("amva_theme");
 
-    // Keep in sync when system preference changes
+    // Only follow system changes when the user hasn't manually overridden
     const onChange = () => {
-      const next = sys();
-      setTheme(next);
-      applyTheme(next);
+      if (!localStorage.getItem("amva_theme")) {
+        const next = sys();
+        setTheme(next);
+        applyTheme(next);
+      }
     };
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
@@ -48,6 +49,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     applyTheme(next);
+    localStorage.setItem("amva_theme", next);
   }
 
   return (

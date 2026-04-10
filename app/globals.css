@@ -233,6 +233,25 @@ html.light body.kitchen-portal input[type="month"] {
   color-scheme: light !important;
 }
 
+/* Kitchen portal — gold/yellow text → dark in light mode for readability */
+html.light body.kitchen-portal .text-brand-gold,
+html.light body.admin-portal .text-brand-gold,
+html.light body.dashboard-portal .text-brand-gold {
+  color: #1c1407 !important;
+}
+
+html.light body.kitchen-portal [class*="text-yellow-"] {
+  color: #1c1407 !important;
+}
+
+html.light body.kitchen-portal [class*="border-yellow-"] {
+  border-color: #c9b99a !important;
+}
+
+html.light body.kitchen-portal [class*="bg-yellow-"] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
 
 /* ── Public website light theme ───────────────────────────────────────────── */
 
@@ -286,7 +305,7 @@ html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.
   color: #6b5d4e !important;
 }
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="text-white/"] {
-  color: unset !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .text-brand-cream {
@@ -302,6 +321,27 @@ html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.
 }
 html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="border-white/"] {
   border-color: unset !important;
+}
+
+/* preserve-dark — restore dark backgrounds (more specific than the overrides above) */
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-black"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-black"] {
+  background-color: #0A0806 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-dark"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-dark"] {
+  background-color: #120E09 !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-brown"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-brown"] {
+  background-color: #1E160D !important;
+}
+
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark[class*="bg-brand-gray"],
+html.light body:not(.staff-portal):not(.admin-portal):not(.kitchen-portal):not(.dashboard-portal) .preserve-dark [class*="bg-brand-gray"] {
+  background-color: #2A2218 !important;
 }
 
 /* Footer */
