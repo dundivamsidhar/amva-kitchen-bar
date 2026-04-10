@@ -25,6 +25,7 @@ import {
   Clock,
   Sun,
   Moon,
+  MessageSquare,
 } from "lucide-react";
 import { useTheme } from "@/lib/ThemeContext";
 
@@ -1074,11 +1075,154 @@ function ReservationsTab() {
   );
 }
 
+// ─── Feedback Tab ─────────────────────────────────────────────────────────────
+
+interface FeedbackOrder {
+  id: string;
+  table_number: number;
+  customer_name: string | null;
+  created_at: string;
+  served_at: string | null;
+  food_rating: number | null;
+  service_rating: number | null;
+  ambience_rating: number | null;
+  feedback_comment: string | null;
+  feedback_at: string | null;
+}
+
+function RatingStars({ value }: { value: number | null }) {
+  if (!value) return <span className="text-white/20 text-xs">—</span>;
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className="w-3.5 h-3.5"
+          fill={i <= value ? "#D4A017" : "transparent"}
+          stroke={i <= value ? "#D4A017" : "rgba(255,255,255,0.15)"}
+        />
+      ))}
+    </div>
+  );
+}
+
+function avgRating(orders: FeedbackOrder[], key: keyof FeedbackOrder): string {
+  const vals = orders.map((o) => o[key] as number | null).filter((v): v is number => v !== null);
+  if (!vals.length) return "—";
+  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+}
+
+function FeedbackTab() {
+  const [feedbacks, setFeedbacks] = useState<FeedbackOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await (supabase as any)
+        .from("orders")
+        .select("id, table_number, customer_name, created_at, served_at, food_rating, service_rating, ambience_rating, feedback_comment, feedback_at")
+        .not("feedback_at", "is", null)
+        .order("feedback_at", { ascending: false });
+      if (data) setFeedbacks(data as FeedbackOrder[]);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) return <p className="text-white/30 text-sm py-12 text-center">Loading feedback…</p>;
+
+  if (feedbacks.length === 0) return (
+    <div className="py-16 text-center flex flex-col items-center gap-3">
+      <MessageSquare className="w-10 h-10 text-white/10" />
+      <p className="text-white/30">No feedback submitted yet.</p>
+      <p className="text-white/20 text-xs">Feedback appears here after customers rate their experience.</p>
+    </div>
+  );
+
+  // Summary averages
+  const avgFood    = avgRating(feedbacks, "food_rating");
+  const avgService = avgRating(feedbacks, "service_rating");
+  const avgAmbience = avgRating(feedbacks, "ambience_rating");
+  const overallAvg = (() => {
+    const nums = feedbacks.flatMap((o) =>
+      [o.food_rating, o.service_rating, o.ambience_rating].filter((v): v is number => v !== null)
+    );
+    if (!nums.length) return "—";
+    return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1);
+  })();
+
+  return (
+    <div className="flex flex-col gap-6 mt-6">
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Overall", value: overallAvg },
+          { label: "Food",    value: avgFood },
+          { label: "Service", value: avgService },
+          { label: "Ambience",value: avgAmbience },
+        ].map(({ label, value }) => (
+          <div key={label} className="border border-white/10 bg-white/[0.02] p-4 text-center">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{label}</p>
+            <p className="font-display text-3xl font-bold text-brand-gold mt-1">{value}</p>
+            <p className="text-white/20 text-xs mt-0.5">out of 5</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-white/30 text-xs font-bold uppercase tracking-widest">
+        {feedbacks.length} Review{feedbacks.length !== 1 ? "s" : ""}
+      </p>
+
+      {/* Per-table feedback cards */}
+      <div className="flex flex-col gap-3">
+        {feedbacks.map((fb) => (
+          <div key={fb.id} className="border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <span className="font-display text-xl font-bold text-white">Table {fb.table_number}</span>
+                {fb.customer_name && <span className="text-white/40 text-sm">· {fb.customer_name}</span>}
+              </div>
+              <span className="text-white/25 text-xs">
+                {fb.feedback_at ? new Date(fb.feedback_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+              </span>
+            </div>
+
+            {/* Ratings row */}
+            <div className="flex flex-wrap gap-4">
+              {[
+                { label: "Food",     val: fb.food_rating },
+                { label: "Service",  val: fb.service_rating },
+                { label: "Ambience", val: fb.ambience_rating },
+              ].map(({ label, val }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="text-white/30 text-xs uppercase tracking-widest">{label}</span>
+                  <RatingStars value={val} />
+                  {val && <span className="text-brand-gold text-xs font-bold">{val}/5</span>}
+                </div>
+              ))}
+            </div>
+
+            {/* Comment */}
+            {fb.feedback_comment && (
+              <div className="border-l-2 border-brand-gold/30 pl-3">
+                <p className="text-white/60 text-sm italic">&ldquo;{fb.feedback_comment}&rdquo;</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 
 const TABS = [
   { id: "orders",       label: "Orders",          icon: UtensilsCrossed },
   { id: "reservations", label: "Reservations",    icon: CalendarDays },
+  { id: "feedback",     label: "Feedback",        icon: MessageSquare },
   { id: "specials",     label: "Today's Specials", icon: Star },
   { id: "menu",         label: "Menu",             icon: ChefHat },
   { id: "staff",        label: "Staff",            icon: Users },
@@ -1169,6 +1313,7 @@ export default function AdminPage() {
         {/* Tab content */}
         {tab === "orders"       && <OrdersTab />}
         {tab === "reservations" && <ReservationsTab />}
+        {tab === "feedback"     && <FeedbackTab />}
         {tab === "specials"     && <SpecialsTab />}
         {tab === "menu"         && <MenuTab />}
         {tab === "staff"        && <StaffTab />}
