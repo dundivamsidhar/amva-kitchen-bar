@@ -52,10 +52,11 @@ const STATUS_STEPS = [
 
 const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
 
-function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
+function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder }: {
   orderId: string;
-  tableNumber: number;
+  tableNumber: number | string;
   paymentMethod: string;
+  onNewOrder: () => void;
 }) {
   const [status, setStatus] = useState<string>("new");
 
@@ -160,6 +161,11 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod }: {
 
         <div className="flex gap-3 flex-wrap justify-center">
           <Link href="/menu" className="btn-primary text-xs">Order More</Link>
+          {isServed && (
+            <button onClick={onNewOrder} className="btn-primary text-xs">
+              New Order
+            </button>
+          )}
           <Link href="/" className="btn-ghost text-xs">Back to Home</Link>
         </div>
       </div>
@@ -181,6 +187,29 @@ export default function OrderPage() {
   const [upiConfirming, setUpiConfirming] = useState(false);
   const [tableError, setTableError] = useState(false);
   const tableInputRef = useRef<HTMLInputElement>(null);
+
+  // Restore order session from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("amva_order_session");
+      if (saved) {
+        const { id, table, payment } = JSON.parse(saved);
+        if (id && table) {
+          setOrderId(id);
+          setTableNumber(String(table));
+          setPaymentMethod(payment ?? "cash");
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Helper to save/clear order session
+  function saveOrderSession(id: string, table: string, payment: PaymentMethod) {
+    localStorage.setItem("amva_order_session", JSON.stringify({ id, table, payment }));
+  }
+  function clearOrderSession() {
+    localStorage.removeItem("amva_order_session");
+  }
 
   // ── Save order to Supabase after payment confirmed ──────────────────────────
   async function saveOrderToKitchen(paymentRef: string) {
@@ -252,6 +281,7 @@ export default function OrderPage() {
       toast("Demo mode — add Razorpay keys to go live", { icon: "ℹ️" });
       const id = await saveOrderToKitchen("demo");
       setOrderId(id);
+      saveOrderSession(id, tableNumber, paymentMethod);
       clearCart();
       toast.success("Order sent to kitchen!");
       return;
@@ -270,6 +300,7 @@ export default function OrderPage() {
         try {
           const id = await saveOrderToKitchen(response.razorpay_payment_id);
           setOrderId(id);
+          saveOrderSession(id, tableNumber, paymentMethod);
           clearCart();
           toast.success("Payment successful! Order sent to kitchen.");
         } catch {
@@ -299,6 +330,7 @@ export default function OrderPage() {
       if (paymentMethod === "cash") {
         const id = await saveOrderToKitchen("cash");
         setOrderId(id);
+        saveOrderSession(id, tableNumber, paymentMethod);
         clearCart();
         toast.success("Order sent to kitchen!");
         setPlacing(false);
@@ -323,6 +355,7 @@ export default function OrderPage() {
       const id = await saveOrderToKitchen("upi");
       setShowUpiModal(false);
       setOrderId(id);
+      saveOrderSession(id, tableNumber, paymentMethod);
       clearCart();
       toast.success("Order confirmed! Sent to kitchen.");
     } catch {
@@ -338,6 +371,13 @@ export default function OrderPage() {
       orderId={orderId}
       tableNumber={tableNumber}
       paymentMethod={paymentMethod}
+      onNewOrder={() => {
+        clearOrderSession();
+        setOrderId(null);
+        setTableNumber("");
+        setCustomerName("");
+        setOrderNotes("");
+      }}
     />;
   }
 
