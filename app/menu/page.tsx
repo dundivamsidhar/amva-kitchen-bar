@@ -82,7 +82,7 @@ function MenuItemRow({ item }: { item: MenuItem; categorySlug: string }) {
           <span className="text-brand-gold font-display font-bold text-lg">₹{item.price}</span>
           <button
             onClick={handleAdd}
-            className={`w-8 h-8 flex items-center justify-center border transition-all duration-200 ${
+            className={`w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center border transition-all duration-200 ${
               added
                 ? "border-green-500 bg-green-500/20 text-green-400"
                 : "border-brand-gold/40 text-brand-gold hover:bg-brand-gold hover:text-brand-black"

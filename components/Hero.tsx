@@ -47,7 +47,7 @@ export default function Hero() {
         <p className="section-label animate-fade-in">Hyderabad · Est. 2025</p>
 
         <h1
-          className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-none tracking-tight animate-fade-up"
+          className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold leading-none tracking-tight animate-fade-up"
           style={{ color: isDark ? "#ffffff" : "#1c1407" }}
         >
           Bold Flavours.
@@ -56,7 +56,7 @@ export default function Hero() {
         </h1>
 
         <p
-          className="max-w-xl text-lg md:text-xl leading-relaxed animate-fade-up"
+          className="max-w-xl text-base md:text-xl leading-relaxed animate-fade-up px-4 sm:px-0"
           style={{ color: isDark ? "rgba(255,255,255,0.70)" : "rgba(28,20,7,0.70)" }}
         >
           Deccan cuisine reimagined — where the spice trade meets the cocktail
@@ -81,7 +81,7 @@ export default function Hero() {
 
         {/* Quick info bar */}
         <div
-          className="mt-12 mb-16 grid grid-cols-3 gap-8 md:gap-16 pt-8 w-full max-w-2xl animate-fade-in"
+          className="mt-8 mb-16 grid grid-cols-3 gap-2 sm:gap-8 md:gap-16 pt-6 w-full max-w-2xl animate-fade-in"
           style={{ borderTop: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(28,20,7,0.12)" }}
         >
           <div className="flex flex-col items-center gap-1">

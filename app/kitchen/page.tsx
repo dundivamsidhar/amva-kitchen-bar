@@ -467,6 +467,13 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => {
     fetchOrders();
 
+    // Debounce so rapid INSERT events (orders + order_items) collapse into one fetch
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedFetch = (delay = 600) => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => fetchOrders(), delay);
+    };
+
     const channel = supabase
       .channel(`kitchen-orders-${Date.now()}`)
       .on(
@@ -478,18 +485,22 @@ function KitchenDisplay({ onSignOut }: { onSignOut: () => void }) {
               `🔔 New order — Table ${(payload.new as Order).table_number}!`,
               { duration: 6000, style: { fontWeight: "bold", fontSize: "15px" } }
             );
+            // Wait 800ms for order_items to be inserted before fetching
+            debouncedFetch(800);
+          } else {
+            debouncedFetch(300);
           }
-          fetchOrders();
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_items" },
-        () => { fetchOrders(); }
+        () => { debouncedFetch(300); }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [fetchOrders]); // fetchOrders is now stable, so this runs only once

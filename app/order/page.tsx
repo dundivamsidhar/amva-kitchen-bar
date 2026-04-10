@@ -52,11 +52,12 @@ const STATUS_STEPS = [
 
 const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
 
-function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder }: {
+function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, onOrderMore }: {
   orderId: string;
   tableNumber: number | string;
   paymentMethod: string;
   onNewOrder: () => void;
+  onOrderMore: () => void;
 }) {
   const [status, setStatus] = useState<string>("new");
 
@@ -160,7 +161,11 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder }:
         </div>
 
         <div className="flex gap-3 flex-wrap justify-center">
-          <Link href="/menu" className="btn-primary text-xs">Order More</Link>
+          {!isServed && (
+            <button onClick={onOrderMore} className="btn-primary text-xs">
+              + Order More
+            </button>
+          )}
           {isServed && (
             <button onClick={onNewOrder} className="btn-primary text-xs">
               New Order
@@ -191,24 +196,48 @@ export default function OrderPage() {
   // Restore order session from localStorage on mount
   useEffect(() => {
     try {
+      // Check active order session first
       const saved = localStorage.getItem("amva_order_session");
       if (saved) {
-        const { id, table, payment } = JSON.parse(saved);
+        const { id, table, payment, name } = JSON.parse(saved);
         if (id && table) {
           setOrderId(id);
           setTableNumber(String(table));
           setPaymentMethod(payment ?? "cash");
+          if (name) setCustomerName(name);
+          return;
         }
+      }
+      // Check reorder pre-fill (coming back from menu after "Order More")
+      const reorder = localStorage.getItem("amva_reorder");
+      if (reorder) {
+        const { table, payment, name } = JSON.parse(reorder);
+        if (table) setTableNumber(String(table));
+        if (payment) setPaymentMethod(payment);
+        if (name) setCustomerName(name);
+        localStorage.removeItem("amva_reorder");
       }
     } catch { /* ignore */ }
   }, []);
 
   // Helper to save/clear order session
   function saveOrderSession(id: string, table: string, payment: PaymentMethod) {
-    localStorage.setItem("amva_order_session", JSON.stringify({ id, table, payment }));
+    localStorage.setItem("amva_order_session", JSON.stringify({ id, table, payment, name: customerName }));
   }
   function clearOrderSession() {
     localStorage.removeItem("amva_order_session");
+  }
+  function startReorder() {
+    // Keep table/name/payment for pre-fill, just clear the order tracker
+    try {
+      const saved = localStorage.getItem("amva_order_session");
+      if (saved) {
+        const { table, payment, name } = JSON.parse(saved);
+        localStorage.setItem("amva_reorder", JSON.stringify({ table, payment, name }));
+      }
+    } catch { /* ignore */ }
+    clearOrderSession();
+    setOrderId(null);
   }
 
   // ── Save order to Supabase after payment confirmed ──────────────────────────
@@ -378,6 +407,10 @@ export default function OrderPage() {
         setCustomerName("");
         setOrderNotes("");
       }}
+      onOrderMore={() => {
+        startReorder();
+        window.location.href = "/menu";
+      }}
     />;
   }
 
@@ -429,11 +462,11 @@ export default function OrderPage() {
                       </button>
                     </div>
                     <div className="flex items-center gap-3 mt-3">
-                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)} className="w-7 h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
+                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)} className="w-9 h-9 sm:w-7 sm:h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="text-white font-bold w-5 text-center">{cartItem.quantity}</span>
-                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)} className="w-7 h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
+                      <button onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)} className="w-9 h-9 sm:w-7 sm:h-7 border border-white/10 flex items-center justify-center text-white/50 hover:border-brand-gold hover:text-brand-gold transition-colors">
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>

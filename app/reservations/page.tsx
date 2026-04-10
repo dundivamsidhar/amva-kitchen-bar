@@ -211,7 +211,7 @@ export default function ReservationsPage() {
       <div className="container-custom py-16 max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           {/* Date, Time, Guests */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold tracking-widest uppercase text-white/50 flex items-center gap-2">
                 <CalendarDays className="w-3.5 h-3.5" />
