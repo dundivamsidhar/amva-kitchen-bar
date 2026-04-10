@@ -173,6 +173,11 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, o
           )}
           <Link href="/" className="btn-ghost text-xs">Back to Home</Link>
         </div>
+        {!isServed && (
+          <p className="text-white/25 text-xs text-center mt-2">
+            Clicking &ldquo;Order More&rdquo; lets you add items to a new order for the same table
+          </p>
+        )}
       </div>
     </div>
   );
@@ -208,15 +213,7 @@ export default function OrderPage() {
           return;
         }
       }
-      // Check reorder pre-fill (coming back from menu after "Order More")
-      const reorder = localStorage.getItem("amva_reorder");
-      if (reorder) {
-        const { table, payment, name } = JSON.parse(reorder);
-        if (table) setTableNumber(String(table));
-        if (payment) setPaymentMethod(payment);
-        if (name) setCustomerName(name);
-        localStorage.removeItem("amva_reorder");
-      }
+      // No active session — form shows empty (fresh order)
     } catch { /* ignore */ }
   }, []);
 
@@ -228,16 +225,11 @@ export default function OrderPage() {
     localStorage.removeItem("amva_order_session");
   }
   function startReorder() {
-    // Keep table/name/payment for pre-fill, just clear the order tracker
-    try {
-      const saved = localStorage.getItem("amva_order_session");
-      if (saved) {
-        const { table, payment, name } = JSON.parse(saved);
-        localStorage.setItem("amva_reorder", JSON.stringify({ table, payment, name }));
-      }
-    } catch { /* ignore */ }
+    // tableNumber, customerName, paymentMethod are already in React state —
+    // just clear the session and show the form. No navigation needed.
     clearOrderSession();
     setOrderId(null);
+    // tableNumber, customerName, paymentMethod stay as-is (already set)
   }
 
   // ── Save order to Supabase after payment confirmed ──────────────────────────
@@ -409,7 +401,8 @@ export default function OrderPage() {
       }}
       onOrderMore={() => {
         startReorder();
-        window.location.href = "/menu";
+        // Form shows immediately with pre-filled table/name — no navigation needed
+        // Customer uses "Browse Menu" from the empty cart to add items
       }}
     />;
   }
@@ -440,7 +433,14 @@ export default function OrderPage() {
           {cart.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center gap-6">
               <ShoppingBag className="w-12 h-12 text-white/10" />
-              <p className="text-white/30 text-lg">Your order is empty</p>
+              {tableNumber ? (
+                <>
+                  <p className="text-white/50 text-lg">Table <span className="text-brand-gold font-bold">{tableNumber}</span> — ready for your next order</p>
+                  <p className="text-white/30 text-sm">Browse the menu and add items, then come back to place your order</p>
+                </>
+              ) : (
+                <p className="text-white/30 text-lg">Your order is empty</p>
+              )}
               <Link href="/menu" className="btn-primary text-xs">Browse Menu</Link>
             </div>
           ) : (
