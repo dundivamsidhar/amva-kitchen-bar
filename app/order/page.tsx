@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { Minus, Plus, Trash2, ChefHat, ShoppingBag, CreditCard, Smartphone, Banknote, CheckCircle2, Clock, UtensilsCrossed, Bell, Truck } from "lucide-react";
+import { Minus, Plus, Trash2, ChefHat, ShoppingBag, CreditCard, Smartphone, Banknote, CheckCircle2, Clock, UtensilsCrossed, Bell, Truck, Star } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { supabase } from "@/lib/supabase";
@@ -52,6 +52,110 @@ const STATUS_STEPS = [
 
 const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
 
+function StarRating({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="text-white/40 text-xs font-bold uppercase tracking-widest">{label}</span>
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onChange(i)}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(0)}
+            className="p-1 transition-transform active:scale-110"
+          >
+            <Star
+              className="w-7 h-7 transition-colors"
+              fill={(hovered || value) >= i ? "#D4A017" : "transparent"}
+              stroke={(hovered || value) >= i ? "#D4A017" : "rgba(255,255,255,0.2)"}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FeedbackForm({ orderId, onDone }: { orderId: string; onDone: () => void }) {
+  const [food, setFood] = useState(0);
+  const [service, setService] = useState(0);
+  const [ambience, setAmbience] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await fetch("/api/submit-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          foodRating: food || null,
+          serviceRating: service || null,
+          ambienceRating: ambience || null,
+          comment: comment.trim() || null,
+        }),
+      });
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="w-full border border-brand-gold/20 bg-brand-gold/5 p-6 flex flex-col items-center gap-3 text-center">
+        <span className="text-3xl">🙏</span>
+        <p className="font-display text-xl font-bold text-white">Thank you for your feedback!</p>
+        <p className="text-white/40 text-sm">Your thoughts help us improve every day.</p>
+        <button onClick={onDone} className="btn-primary text-xs mt-2">Done</button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full border border-white/10 bg-white/[0.02] p-6 flex flex-col gap-6">
+      <div className="text-center">
+        <p className="font-display text-xl font-bold text-white">How was your experience?</p>
+        <p className="text-white/40 text-sm mt-1">Rate your meal & share your thoughts</p>
+      </div>
+
+      {/* Star ratings */}
+      <div className="grid grid-cols-3 gap-4">
+        <StarRating value={food} onChange={setFood} label="Food" />
+        <StarRating value={service} onChange={setService} label="Service" />
+        <StarRating value={ambience} onChange={setAmbience} label="Ambience" />
+      </div>
+
+      {/* Comment */}
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Tell us more — what did you love? What can we improve?"
+        rows={3}
+        className="w-full bg-brand-dark border border-white/10 text-white placeholder:text-white/20 text-sm p-4 resize-none focus:outline-none focus:border-brand-gold/50 transition-colors"
+      />
+
+      <div className="flex gap-3 justify-end">
+        <button type="button" onClick={onDone} className="btn-ghost text-xs">Skip</button>
+        <button
+          type="submit"
+          disabled={submitting || (!food && !service && !ambience && !comment.trim())}
+          className="btn-primary text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Submitting…" : "Submit Feedback"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, onOrderMore }: {
   orderId: string;
   tableNumber: number | string;
@@ -60,6 +164,7 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, o
   onOrderMore: () => void;
 }) {
   const [status, setStatus] = useState<string>("new");
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +205,14 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, o
 
   const currentIdx = STATUS_ORDER.indexOf(status as typeof STATUS_ORDER[number]);
   const isServed = status === "served";
+
+  // Auto-show feedback form when order is served
+  useEffect(() => {
+    if (isServed) {
+      const timer = setTimeout(() => setShowFeedback(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isServed]);
 
   return (
     <div className="min-h-screen bg-brand-black flex items-center justify-center px-4 pt-20 pb-12">
@@ -160,13 +273,21 @@ function OrderStatusTracker({ orderId, tableNumber, paymentMethod, onNewOrder, o
           })}
         </div>
 
+        {/* Feedback form — shown 1.5s after served */}
+        {isServed && showFeedback && (
+          <FeedbackForm
+            orderId={orderId}
+            onDone={onNewOrder}
+          />
+        )}
+
         <div className="flex gap-3 flex-wrap justify-center">
           {!isServed && (
             <button onClick={onOrderMore} className="btn-primary text-xs">
               + Order More
             </button>
           )}
-          {isServed && (
+          {isServed && !showFeedback && (
             <button onClick={onNewOrder} className="btn-primary text-xs">
               New Order
             </button>
