@@ -15,21 +15,8 @@ export default function Footer() {
     <footer style={{ background: bg, borderTop: `1px solid ${borderColor}` }}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-12">
 
-        {/* Decorative brand name */}
-        <div className="py-12 md:py-16 overflow-hidden" style={{ borderBottom: `1px solid ${borderColor}` }}>
-          <div
-            className="font-display font-black leading-none select-none"
-            style={{
-              fontSize: "clamp(5rem, 18vw, 14rem)",
-              color: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.07)",
-            }}
-          >
-            AMVA
-          </div>
-        </div>
-
         {/* Main grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 py-14 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 py-10 md:py-12">
 
           {/* Brand */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
