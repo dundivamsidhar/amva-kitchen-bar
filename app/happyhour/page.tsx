@@ -1,7 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { Plus, Check } from "lucide-react";
 import { useTheme } from "@/lib/ThemeContext";
+import { useCart } from "@/lib/CartContext";
+import toast from "react-hot-toast";
 
 const DEALS = [
   {
@@ -28,17 +32,42 @@ const DEALS = [
 ];
 
 const COCKTAILS = [
-  { name: "AmVa Sour", price: "₹695 → ₹349", desc: "Bourbon · Tamarind · Curry Leaf" },
-  { name: "Hyderabad Negroni", price: "₹745 → ₹375", desc: "Empress Gin · Campari · Cardamom" },
-  { name: "Masala Chai Old Fashioned", price: "₹745 → ₹375", desc: "Woodford · Chai Reduction · Star Anise" },
-  { name: "Mango Lassi Margarita", price: "₹695 → ₹349", desc: "Patrón · Alphonso Mango · Saffron" },
-  { name: "Kokum Spritz", price: "₹595 → ₹299", desc: "Prosecco · Kokum · Rose · Mint" },
-  { name: "Smoked Paan Mojito", price: "₹595 → ₹299", desc: "White Rum · Paan · Lime · Smoked Sugar" },
+  { id: 24, name: "AmVa Sour",               happyPrice: 349, originalPrice: 695, desc: "Bourbon · Tamarind · Curry Leaf",         category_id: 6 },
+  { id: 25, name: "Hyderabad Negroni",        happyPrice: 375, originalPrice: 745, desc: "Empress Gin · Campari · Cardamom",        category_id: 6 },
+  { id: 26, name: "Masala Chai Old Fashioned",happyPrice: 375, originalPrice: 745, desc: "Woodford · Chai Reduction · Star Anise",  category_id: 6 },
+  { id: 27, name: "Mango Lassi Margarita",    happyPrice: 349, originalPrice: 695, desc: "Patrón · Alphonso Mango · Saffron",       category_id: 6 },
+  { id: 28, name: "Kokum Spritz",             happyPrice: 299, originalPrice: 595, desc: "Prosecco · Kokum · Rose · Mint",          category_id: 6 },
+  { id: 29, name: "Smoked Paan Mojito",       happyPrice: 299, originalPrice: 595, desc: "White Rum · Paan · Lime · Smoked Sugar",  category_id: 6 },
 ];
 
 export default function HappyHourPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { addToCart } = useCart();
+  const [added, setAdded] = useState<number | null>(null);
+
+  function handleAdd(c: typeof COCKTAILS[0]) {
+    addToCart({
+      id: c.id,
+      category_id: c.category_id,
+      name: c.name,
+      description: c.desc,
+      price: c.happyPrice,
+      image_url: null,
+      tags: ["happy-hour"],
+      is_available: true,
+      is_featured: false,
+      is_vegetarian: false,
+      is_vegan: false,
+      spice_level: 0,
+      is_special_today: false,
+      special_note: "Happy Hour price",
+      created_at: "",
+    });
+    toast.success(`${c.name} added!`);
+    setAdded(c.id);
+    setTimeout(() => setAdded(null), 1800);
+  }
 
   const bg = isDark ? "#0A0806" : "#fdf9f3";
   const cardBg = isDark ? "#120E09" : "#f5ede0";
@@ -181,26 +210,51 @@ export default function HappyHourPage() {
             {COCKTAILS.map((c, i) => (
               <div
                 key={c.name}
-                className="flex flex-col sm:flex-row sm:items-center justify-between py-5 border-b gap-2 group hover:border-brand-gold/30 transition-colors"
+                className="flex items-center justify-between py-5 border-b gap-4 group hover:border-brand-gold/30 transition-colors"
                 style={{ borderColor }}
               >
-                <div className="flex items-baseline gap-5">
-                  <span className="text-white/20 text-xs font-bold font-display w-5 flex-shrink-0" style={{ color: subColor }}>
+                {/* Number + name + desc */}
+                <div className="flex items-center gap-5 min-w-0">
+                  <span className="text-xs font-bold font-display w-5 flex-shrink-0" style={{ color: subColor }}>
                     0{i + 1}
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <span
-                      className="font-display text-lg md:text-xl font-black group-hover:text-brand-gold transition-colors"
+                      className="font-display text-lg md:text-xl font-black group-hover:text-brand-gold transition-colors block"
                       style={{ color: headingColor }}
                     >
                       {c.name}
                     </span>
-                    <p className="text-xs mt-0.5" style={{ color: subColor }}>{c.desc}</p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: subColor }}>{c.desc}</p>
                   </div>
                 </div>
-                <span className="font-display font-black text-brand-gold text-lg pl-10 sm:pl-0 flex-shrink-0">
-                  {c.price}
-                </span>
+
+                {/* Price + Add button */}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs line-through" style={{ color: subColor }}>₹{c.originalPrice}</p>
+                    <p className="font-display font-black text-brand-gold text-lg">₹{c.happyPrice}</p>
+                  </div>
+                  {/* Mobile price */}
+                  <p className="font-display font-black text-brand-gold text-base sm:hidden">₹{c.happyPrice}</p>
+
+                  {/* Add button */}
+                  <button
+                    onClick={() => handleAdd(c)}
+                    className="w-10 h-10 flex items-center justify-center flex-shrink-0 transition-all duration-300 active:scale-90"
+                    style={{
+                      background: added === c.id ? "#D4A017" : "transparent",
+                      border: added === c.id ? "2px solid #D4A017" : `2px solid ${isDark ? "rgba(255,255,255,0.15)" : "rgba(28,20,7,0.18)"}`,
+                      color: added === c.id ? "#0A0806" : isDark ? "rgba(255,255,255,0.50)" : "rgba(28,20,7,0.50)",
+                    }}
+                    aria-label={`Add ${c.name} to order`}
+                  >
+                    {added === c.id
+                      ? <Check className="w-4 h-4" />
+                      : <Plus className="w-4 h-4" />
+                    }
+                  </button>
+                </div>
               </div>
             ))}
           </div>
