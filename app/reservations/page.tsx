@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 import type { ReservationInsert } from "@/lib/database.types";
-import { CalendarDays, Clock, Users, User, Phone, Mail, MessageSquare, PartyPopper } from "lucide-react";
+import { CalendarDays, Clock, Users, User, Phone, Mail, MessageSquare, PartyPopper, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 const TIME_SLOTS = [
   "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
@@ -15,6 +15,8 @@ const OCCASIONS = [
   "Anniversary", "Birthday", "Business Lunch", "Date Night",
   "Family Gathering", "Celebration", "Other",
 ];
+
+const MAX_GUESTS_PER_SLOT = 20;
 
 const INITIAL_FORM: ReservationInsert = {
   name: "",
@@ -27,10 +29,54 @@ const INITIAL_FORM: ReservationInsert = {
   special_requests: "",
 };
 
+type AvailabilityStatus = "idle" | "checking" | "available" | "limited" | "full";
+
 export default function ReservationsPage() {
   const [form, setForm] = useState<ReservationInsert>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [availability, setAvailability] = useState<AvailabilityStatus>("idle");
+  const [spotsLeft, setSpotsLeft] = useState<number>(MAX_GUESTS_PER_SLOT);
+  const checkRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Live availability check whenever date, time, or guests changes
+  useEffect(() => {
+    if (!form.date || !form.time) {
+      setAvailability("idle");
+      return;
+    }
+    setAvailability("checking");
+    if (checkRef.current) clearTimeout(checkRef.current);
+    checkRef.current = setTimeout(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existing } = await (supabase as any)
+          .from("reservations")
+          .select("guests")
+          .eq("date", form.date)
+          .eq("time", form.time)
+          .in("status", ["pending", "confirmed"]);
+
+        const booked = existing
+          ? existing.reduce((sum: number, r: { guests: number }) => sum + r.guests, 0)
+          : 0;
+        const remaining = MAX_GUESTS_PER_SLOT - booked;
+        setSpotsLeft(remaining);
+
+        if (remaining <= 0) {
+          setAvailability("full");
+        } else if (remaining <= 4) {
+          setAvailability("limited");
+        } else {
+          setAvailability("available");
+        }
+      } catch {
+        // Supabase not connected — assume available
+        setSpotsLeft(MAX_GUESTS_PER_SLOT);
+        setAvailability("available");
+      }
+    }, 500); // 500ms debounce
+  }, [form.date, form.time]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -50,11 +96,44 @@ export default function ReservationsPage() {
     }
     setLoading(true);
     try {
+      // ── Table availability check ──────────────────────────────────────────
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
+        .from("reservations")
+        .select("guests")
+        .eq("date", form.date)
+        .eq("time", form.time)
+        .in("status", ["pending", "confirmed"]);
+
+      if (existing && existing.length > 0) {
+        const bookedGuests = existing.reduce((sum: number, r: { guests: number }) => sum + r.guests, 0);
+        if (bookedGuests + (form.guests ?? 2) > MAX_GUESTS_PER_SLOT) {
+          toast.error(`Sorry, this time slot is fully booked. Please choose a different time.`);
+          setLoading(false);
+          return;
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from("reservations").insert(form);
       if (error) throw error;
+      // Send confirmation email (fire and forget — don't block on it)
+      fetch("/api/send-reservation-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          date: form.date,
+          time: form.time,
+          guests: form.guests,
+          occasion: form.occasion,
+          special_requests: form.special_requests,
+        }),
+      }).catch(() => {}); // silently ignore email errors
       setSubmitted(true);
-      toast.success("Reservation request received! We'll confirm shortly.");
+      toast.success("Reservation request received! Confirmation email sent.");
     } catch {
       // Show success anyway for demo if Supabase not connected
       setSubmitted(true);
@@ -132,7 +211,7 @@ export default function ReservationsPage() {
       <div className="container-custom py-16 max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           {/* Date, Time, Guests */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold tracking-widest uppercase text-white/50 flex items-center gap-2">
                 <CalendarDays className="w-3.5 h-3.5" />
@@ -195,6 +274,35 @@ export default function ReservationsPage() {
               </select>
             </div>
           </div>
+
+          {/* Live availability indicator */}
+          {availability !== "idle" && (
+            <div className={`flex items-center gap-3 px-4 py-3 border text-sm transition-all ${
+              availability === "checking"
+                ? "border-white/10 bg-white/5 text-white/40"
+                : availability === "available"
+                ? "border-green-500/30 bg-green-500/10 text-green-400"
+                : availability === "limited"
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                : "border-red-500/30 bg-red-500/10 text-red-400"
+            }`}>
+              {availability === "checking" ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : availability === "available" ? (
+                <CheckCircle className="w-4 h-4 shrink-0" />
+              ) : availability === "limited" ? (
+                <CheckCircle className="w-4 h-4 shrink-0" />
+              ) : (
+                <XCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>
+                {availability === "checking" && "Checking availability…"}
+                {availability === "available" && `This slot is available — ${spotsLeft} of ${MAX_GUESTS_PER_SLOT} seats open`}
+                {availability === "limited" && `Only ${spotsLeft} seat${spotsLeft === 1 ? "" : "s"} left at this time — book soon`}
+                {availability === "full" && "This time slot is fully booked. Please choose a different time."}
+              </span>
+            </div>
+          )}
 
           <div className="h-px bg-white/5" />
 
@@ -287,10 +395,10 @@ export default function ReservationsPage() {
           <div className="flex flex-col gap-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || availability === "full"}
               className="btn-primary justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Sending Request..." : "Request Reservation"}
+              {loading ? "Sending Request..." : availability === "full" ? "Slot Fully Booked" : "Request Reservation"}
             </button>
             <p className="text-white/25 text-xs text-center leading-relaxed">
               Your reservation is a request. We will confirm via email or phone

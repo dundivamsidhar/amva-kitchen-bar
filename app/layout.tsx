@@ -6,6 +6,7 @@ import FloatingCart from "@/components/FloatingCart";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "@/lib/CartContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "AmVa Kitchen & Bar — Hyderabad",
@@ -27,12 +28,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Prevent flash of wrong theme — runs before paint */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
-            var t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            var saved = localStorage.getItem('amva_theme');
+            var t = saved ? saved : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
             document.documentElement.classList.add(t);
             if (t === 'light') document.documentElement.classList.remove('dark');
             else document.documentElement.classList.remove('light');
@@ -67,6 +69,7 @@ export default function RootLayout({
             />
           </CartProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

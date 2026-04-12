@@ -44,6 +44,7 @@ const config: Config = {
         "fade-in": "fadeIn 0.8s ease-out forwards",
         shimmer: "shimmer 2s infinite",
         float: "float 6s ease-in-out infinite",
+        marquee: "marquee 35s linear infinite",
       },
       keyframes: {
         fadeUp: {
@@ -61,6 +62,10 @@ const config: Config = {
         float: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
     },
