@@ -1,4 +1,11 @@
+"use client";
+
+import { useTheme } from "@/lib/ThemeContext";
+
 export default function MarqueeStrip() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   const items = [
     "Deccan Cuisine",
     "Signature Cocktails",
@@ -13,7 +20,10 @@ export default function MarqueeStrip() {
   const repeated = [...items, ...items, ...items, ...items];
 
   return (
-    <div className="bg-brand-gold py-3.5 overflow-hidden">
+    <div
+      className="py-3.5 overflow-hidden"
+      style={{ background: isDark ? "#D4A017" : "#D4A017" }}
+    >
       <div className="flex animate-marquee whitespace-nowrap will-change-transform">
         {repeated.map((item, i) => (
           <span

@@ -1,16 +1,28 @@
+"use client";
+
 import Link from "next/link";
 import { Instagram, Facebook, Twitter } from "lucide-react";
+import { useTheme } from "@/lib/ThemeContext";
 
 export default function Footer() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const bg = isDark ? "#060503" : "#1c1407";
+  const borderColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.08)";
+
   return (
-    <footer className="bg-[#060503] border-t border-white/5">
+    <footer style={{ background: bg, borderTop: `1px solid ${borderColor}` }}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-12">
 
-        {/* Big brand name — decorative */}
-        <div className="border-b border-white/5 py-12 md:py-16 overflow-hidden">
+        {/* Decorative brand name */}
+        <div className="py-12 md:py-16 overflow-hidden" style={{ borderBottom: `1px solid ${borderColor}` }}>
           <div
-            className="font-display font-black text-white/5 leading-none select-none"
-            style={{ fontSize: "clamp(5rem, 18vw, 14rem)" }}
+            className="font-display font-black leading-none select-none"
+            style={{
+              fontSize: "clamp(5rem, 18vw, 14rem)",
+              color: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.07)",
+            }}
           >
             AMVA
           </div>
@@ -19,7 +31,7 @@ export default function Footer() {
         {/* Main grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 py-14 md:py-16">
 
-          {/* Brand col */}
+          {/* Brand */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
             <Link
               href="/"
@@ -35,8 +47,9 @@ export default function Footer() {
                 <a
                   key={i}
                   href="#"
-                  className="w-9 h-9 border border-white/10 flex items-center justify-center text-white/25 hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
-                  aria-label="Social"
+                  aria-label="Social media"
+                  className="w-9 h-9 flex items-center justify-center text-white/25 hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
+                  style={{ border: "1px solid rgba(255,255,255,0.10)" }}
                 >
                   <Icon className="w-4 h-4" />
                 </a>
@@ -74,19 +87,13 @@ export default function Footer() {
               Visit
             </h4>
             <div className="flex flex-col gap-2 text-sm">
-              <p className="text-white/35">Plot 42, Road 10</p>
-              <p className="text-white/35">Jubilee Hills</p>
-              <p className="text-white/35">Hyderabad, TS 500033</p>
-              <a
-                href="tel:+914022334455"
-                className="text-white/35 hover:text-white transition-colors mt-2"
-              >
+              {["Plot 42, Road 10", "Jubilee Hills", "Hyderabad, TS 500033"].map((line) => (
+                <p key={line} className="text-white/35">{line}</p>
+              ))}
+              <a href="tel:+914022334455" className="text-white/35 hover:text-white transition-colors mt-2">
                 040-2233-4455
               </a>
-              <a
-                href="mailto:hello@amvakitchen.in"
-                className="text-white/35 hover:text-white transition-colors"
-              >
+              <a href="mailto:hello@amvakitchen.in" className="text-white/35 hover:text-white transition-colors">
                 hello@amvakitchen.in
               </a>
             </div>
@@ -108,25 +115,22 @@ export default function Footer() {
                   <span className="text-white/20">{time}</span>
                 </div>
               ))}
-              <p className="text-brand-gold/45 text-xs mt-2">
-                Sunday Brunch from 11am
-              </p>
+              <p className="text-brand-gold/45 text-xs mt-2">Sunday Brunch from 11am</p>
             </div>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-white/5 py-7 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div
+          className="py-7 flex flex-col sm:flex-row items-center justify-between gap-4"
+          style={{ borderTop: `1px solid ${borderColor}` }}
+        >
           <p className="text-white/20 text-xs">
             © {new Date().getFullYear()} AmVa Kitchen & Bar. All rights reserved. Hyderabad, India.
           </p>
           <div className="flex gap-6">
             {["Privacy Policy", "Terms of Use"].map((label) => (
-              <Link
-                key={label}
-                href="#"
-                className="text-white/20 text-xs hover:text-white/40 transition-colors"
-              >
+              <Link key={label} href="#" className="text-white/20 text-xs hover:text-white/40 transition-colors">
                 {label}
               </Link>
             ))}
