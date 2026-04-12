@@ -95,7 +95,7 @@ export default function AboutPage() {
               reason we exist.
             </p>
             <div className="divider-gold" />
-            <div className="flex gap-12">
+            <div className="flex gap-6 sm:gap-12 flex-wrap">
               <div>
                 <p className="font-display text-4xl font-bold text-brand-gold">2025</p>
                 <p className="text-white/40 text-sm mt-1">Year Founded</p>
@@ -111,7 +111,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative pb-8 lg:pb-0">
             <div className="relative aspect-[3/4] overflow-hidden">
               <Image
                 src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80"
@@ -121,8 +121,8 @@ export default function AboutPage() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
             </div>
-            <div className="absolute -bottom-6 -right-6 bg-brand-gold p-5 max-w-[180px]">
-              <p className="text-brand-black font-bold text-lg font-display leading-tight">
+            <div className="absolute bottom-0 right-0 lg:-bottom-6 lg:-right-6 bg-brand-gold p-4 lg:p-5 max-w-[160px]">
+              <p className="text-brand-black font-bold text-base lg:text-lg font-display leading-tight">
                 Jubilee Hills<br />Hyderabad
               </p>
             </div>

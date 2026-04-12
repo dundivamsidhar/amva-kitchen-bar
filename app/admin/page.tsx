@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import toast from "react-hot-toast";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -24,6 +25,7 @@ import {
   Clock,
   Sun,
   Moon,
+  MessageSquare,
 } from "lucide-react";
 import { useTheme } from "@/lib/ThemeContext";
 
@@ -372,7 +374,71 @@ interface Order {
   total: number;
   payment_method?: string | null;
   created_at: string;
+  acknowledged_at: string | null;
+  preparing_at: string | null;
+  ready_at: string | null;
+  served_at: string | null;
   order_items: OrderItem[];
+}
+
+function diffLabel(from: string, to: string): string {
+  const secs = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 1000);
+  if (secs < 60) return `${secs}s`;
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
+function OrderTimeline({ order }: { order: Order }) {
+  const steps = [
+    { key: "ordered",      label: "Order Placed",   ts: order.created_at,       icon: "🧾", color: "text-white/60" },
+    { key: "acknowledged", label: "Acknowledged",   ts: order.acknowledged_at,  icon: "👀", color: "text-yellow-400" },
+    { key: "preparing",    label: "Cooking Started", ts: order.preparing_at,    icon: "🍳", color: "text-blue-400" },
+    { key: "ready",        label: "Ready",           ts: order.ready_at,         icon: "✅", color: "text-green-400" },
+    { key: "served",       label: "Served",          ts: order.served_at,        icon: "🍽️", color: "text-brand-gold" },
+  ];
+
+  const totalSecs = order.served_at
+    ? Math.round((new Date(order.served_at).getTime() - new Date(order.created_at).getTime()) / 1000)
+    : null;
+
+  const totalLabel = totalSecs !== null
+    ? totalSecs < 60 ? `${totalSecs}s` : `${Math.floor(totalSecs / 60)}m ${totalSecs % 60}s`
+    : null;
+
+  return (
+    <div className="border-t border-white/5 pt-3 mt-1">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Order Timeline</p>
+      <div className="flex flex-wrap gap-x-0 gap-y-1">
+        {steps.map((step, i) => {
+          const prev = i > 0 ? steps[i - 1] : null;
+          const diff = step.ts && prev?.ts ? diffLabel(prev.ts, step.ts) : null;
+          return (
+            <div key={step.key} className="flex items-center gap-1">
+              {i > 0 && (
+                <div className="flex items-center gap-1 mx-1">
+                  <span className="text-white/15">──</span>
+                  {diff && <span className="text-[10px] text-white/30 font-mono">+{diff}</span>}
+                  <span className="text-white/15">──</span>
+                </div>
+              )}
+              <div className={`flex flex-col items-center ${!step.ts ? "opacity-25" : ""}`}>
+                <span className="text-sm">{step.icon}</span>
+                <span className={`text-[10px] font-bold ${step.color}`}>{step.label}</span>
+                <span className="text-[10px] text-white/30 font-mono">
+                  {step.ts ? new Date(step.ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        {totalLabel && (
+          <div className="ml-auto flex items-center gap-1.5 text-xs font-bold text-brand-gold border border-brand-gold/30 px-2 py-1 bg-brand-gold/5">
+            ⏱ Total: {totalLabel}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface MenuItem {
@@ -499,8 +565,20 @@ function OrdersTab() {
   }, [fetchOrders]);
 
   async function changeStatus(orderId: string, status: string) {
-    await (supabase as any).from("orders").update({ status }).eq("id", orderId);
-    fetchOrders();
+    const res = await fetch("/api/admin/update-order-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: orderId, status }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      toast.error(json.error ?? "Failed to update order.");
+    } else {
+      // Optimistically update local state with returned timestamps
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, ...json.updated } : o))
+      );
+    }
   }
 
   if (loading) {
@@ -564,6 +642,9 @@ function OrdersTab() {
               </span>
             ))}
           </div>
+
+          {/* Order Timeline */}
+          <OrderTimeline order={order} />
 
           {/* Status change */}
           <div className="flex items-center gap-2">
@@ -811,12 +892,46 @@ interface Reservation {
   email: string | null;
   notes: string | null;
   status: string;
+  seated_at: string | null;
+}
+
+function SeatedTimer({ seatedAt }: { seatedAt: string }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = new Date(seatedAt).getTime();
+    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [seatedAt]);
+
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  const display = h > 0
+    ? `${h}h ${String(m).padStart(2, "0")}m`
+    : `${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+
+  const color = elapsed < 30 * 60
+    ? "text-green-400 border-green-500/30 bg-green-500/10"
+    : elapsed < 60 * 60
+    ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
+    : "text-red-400 border-red-500/30 bg-red-500/10";
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-mono font-bold border px-2 py-1 ${color}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+      {display}
+    </span>
+  );
 }
 
 function ReservationsTab() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"upcoming" | "all">("upcoming");
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const fetchReservations = useCallback(async () => {
     const query = (supabase as any).from("reservations").select("*").order("date", { ascending: true }).order("time", { ascending: true });
@@ -830,8 +945,32 @@ function ReservationsTab() {
   useEffect(() => { fetchReservations(); }, [fetchReservations]);
 
   async function updateStatus(id: number, status: string) {
-    await (supabase as any).from("reservations").update({ status }).eq("id", id);
-    fetchReservations();
+    setUpdatingId(id);
+    try {
+      const res = await fetch("/api/admin/update-reservation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to update reservation.");
+      } else {
+        toast.success(`Reservation ${status}.`);
+        // Optimistically update local state so UI reflects immediately
+        setReservations((prev) =>
+          prev.map((r) =>
+            r.id === id
+              ? { ...r, status, seated_at: status === "seated" ? new Date().toISOString() : r.seated_at }
+              : r
+          )
+        );
+      }
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   const statusStyle: Record<string, string> = {
@@ -883,32 +1022,194 @@ function ReservationsTab() {
                 )}
                 {r.notes && <p className="text-yellow-400/70 text-xs mt-1">Note: {r.notes}</p>}
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${statusStyle[r.status] ?? "border-white/10 text-white/30"}`}>
-                {r.status}
-              </span>
+              <div className="flex flex-col items-end gap-1.5">
+                <span className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${statusStyle[r.status] ?? "border-white/10 text-white/30"}`}>
+                  {r.status}
+                </span>
+                {r.status === "seated" && r.seated_at && (
+                  <SeatedTimer seatedAt={r.seated_at} />
+                )}
+              </div>
             </div>
 
             {/* Action buttons */}
             <div className="flex gap-2 flex-wrap">
-              {r.status !== "confirmed" && r.status !== "cancelled" && (
-                <button onClick={() => updateStatus(r.id, "confirmed")}
-                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirm
+              {r.status !== "confirmed" && r.status !== "cancelled" && r.status !== "seated" && (
+                <button
+                  onClick={() => updateStatus(r.id, "confirmed")}
+                  disabled={updatingId === r.id}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-green-600 text-white hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {updatingId === r.id
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                    : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Confirm
                 </button>
               )}
               {r.status === "confirmed" && (
-                <button onClick={() => updateStatus(r.id, "seated")}
-                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-500 transition-colors">
-                  <Clock className="w-3.5 h-3.5" /> Mark Seated
+                <button
+                  onClick={() => updateStatus(r.id, "seated")}
+                  disabled={updatingId === r.id}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {updatingId === r.id
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                    : <Clock className="w-3.5 h-3.5" />}
+                  Mark Seated
                 </button>
               )}
               {r.status !== "cancelled" && (
-                <button onClick={() => updateStatus(r.id, "cancelled")}
-                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 border border-white/10 text-white/40 hover:border-red-500/40 hover:text-red-400 transition-colors">
-                  <XCircle className="w-3.5 h-3.5" /> Cancel
+                <button
+                  onClick={() => updateStatus(r.id, "cancelled")}
+                  disabled={updatingId === r.id}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 border border-white/10 text-white/40 hover:border-red-500/40 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {updatingId === r.id
+                    ? <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-red-400 rounded-full animate-spin inline-block" />
+                    : <XCircle className="w-3.5 h-3.5" />}
+                  Cancel
                 </button>
               )}
             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Feedback Tab ─────────────────────────────────────────────────────────────
+
+interface FeedbackOrder {
+  id: string;
+  table_number: number;
+  customer_name: string | null;
+  created_at: string;
+  served_at: string | null;
+  food_rating: number | null;
+  service_rating: number | null;
+  ambience_rating: number | null;
+  feedback_comment: string | null;
+  feedback_at: string | null;
+}
+
+function RatingStars({ value }: { value: number | null }) {
+  if (!value) return <span className="text-white/20 text-xs">—</span>;
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className="w-3.5 h-3.5"
+          fill={i <= value ? "#D4A017" : "transparent"}
+          stroke={i <= value ? "#D4A017" : "rgba(255,255,255,0.15)"}
+        />
+      ))}
+    </div>
+  );
+}
+
+function avgRating(orders: FeedbackOrder[], key: keyof FeedbackOrder): string {
+  const vals = orders.map((o) => o[key] as number | null).filter((v): v is number => v !== null);
+  if (!vals.length) return "—";
+  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+}
+
+function FeedbackTab() {
+  const [feedbacks, setFeedbacks] = useState<FeedbackOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await (supabase as any)
+        .from("orders")
+        .select("id, table_number, customer_name, created_at, served_at, food_rating, service_rating, ambience_rating, feedback_comment, feedback_at")
+        .not("feedback_at", "is", null)
+        .order("feedback_at", { ascending: false });
+      if (data) setFeedbacks(data as FeedbackOrder[]);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) return <p className="text-white/30 text-sm py-12 text-center">Loading feedback…</p>;
+
+  if (feedbacks.length === 0) return (
+    <div className="py-16 text-center flex flex-col items-center gap-3">
+      <MessageSquare className="w-10 h-10 text-white/10" />
+      <p className="text-white/30">No feedback submitted yet.</p>
+      <p className="text-white/20 text-xs">Feedback appears here after customers rate their experience.</p>
+    </div>
+  );
+
+  // Summary averages
+  const avgFood    = avgRating(feedbacks, "food_rating");
+  const avgService = avgRating(feedbacks, "service_rating");
+  const avgAmbience = avgRating(feedbacks, "ambience_rating");
+  const overallAvg = (() => {
+    const nums = feedbacks.flatMap((o) =>
+      [o.food_rating, o.service_rating, o.ambience_rating].filter((v): v is number => v !== null)
+    );
+    if (!nums.length) return "—";
+    return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1);
+  })();
+
+  return (
+    <div className="flex flex-col gap-6 mt-6">
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Overall", value: overallAvg },
+          { label: "Food",    value: avgFood },
+          { label: "Service", value: avgService },
+          { label: "Ambience",value: avgAmbience },
+        ].map(({ label, value }) => (
+          <div key={label} className="border border-white/10 bg-white/[0.02] p-4 text-center">
+            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">{label}</p>
+            <p className="font-display text-3xl font-bold text-brand-gold mt-1">{value}</p>
+            <p className="text-white/20 text-xs mt-0.5">out of 5</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-white/30 text-xs font-bold uppercase tracking-widest">
+        {feedbacks.length} Review{feedbacks.length !== 1 ? "s" : ""}
+      </p>
+
+      {/* Per-table feedback cards */}
+      <div className="flex flex-col gap-3">
+        {feedbacks.map((fb) => (
+          <div key={fb.id} className="border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <span className="font-display text-xl font-bold text-white">Table {fb.table_number}</span>
+                {fb.customer_name && <span className="text-white/40 text-sm">· {fb.customer_name}</span>}
+              </div>
+              <span className="text-white/25 text-xs">
+                {fb.feedback_at ? new Date(fb.feedback_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+              </span>
+            </div>
+
+            {/* Ratings row */}
+            <div className="flex flex-wrap gap-4">
+              {[
+                { label: "Food",     val: fb.food_rating },
+                { label: "Service",  val: fb.service_rating },
+                { label: "Ambience", val: fb.ambience_rating },
+              ].map(({ label, val }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="text-white/30 text-xs uppercase tracking-widest">{label}</span>
+                  <RatingStars value={val} />
+                  {val && <span className="text-brand-gold text-xs font-bold">{val}/5</span>}
+                </div>
+              ))}
+            </div>
+
+            {/* Comment */}
+            {fb.feedback_comment && (
+              <div className="border-l-2 border-brand-gold/30 pl-3">
+                <p className="text-white/60 text-sm italic">&ldquo;{fb.feedback_comment}&rdquo;</p>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -921,6 +1222,7 @@ function ReservationsTab() {
 const TABS = [
   { id: "orders",       label: "Orders",          icon: UtensilsCrossed },
   { id: "reservations", label: "Reservations",    icon: CalendarDays },
+  { id: "feedback",     label: "Feedback",        icon: MessageSquare },
   { id: "specials",     label: "Today's Specials", icon: Star },
   { id: "menu",         label: "Menu",             icon: ChefHat },
   { id: "staff",        label: "Staff",            icon: Users },
@@ -1011,6 +1313,7 @@ export default function AdminPage() {
         {/* Tab content */}
         {tab === "orders"       && <OrdersTab />}
         {tab === "reservations" && <ReservationsTab />}
+        {tab === "feedback"     && <FeedbackTab />}
         {tab === "specials"     && <SpecialsTab />}
         {tab === "menu"         && <MenuTab />}
         {tab === "staff"        && <StaffTab />}

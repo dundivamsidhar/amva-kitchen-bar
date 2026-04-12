@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "AmVa Kitchen",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/Users/dundi/.nvm/versions/node/v19.9.0/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev"],
       "port": 3000,
       "autoPort": true
     }

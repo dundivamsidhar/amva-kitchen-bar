@@ -403,25 +403,31 @@ function DailyPLPanel({ revenue, ordersCount }: { revenue: number; ordersCount: 
 
 function Dashboard() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [todayOrders, setTodayOrders] = useState<Order[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
+  // ── Date range filter ────────────────────────────────────────────────────────
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [dateFrom, setDateFrom] = useState(todayStr);
+  const [dateTo, setDateTo] = useState(todayStr);
+
+  const QUICK_RANGES = [
+    { label: "Today", from: todayStr, to: todayStr },
+    { label: "Yesterday", from: (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })(), to: (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })() },
+    { label: "Last 7 days", from: (() => { const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().split("T")[0]; })(), to: todayStr },
+    { label: "This month", from: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; })(), to: todayStr },
+  ];
+
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayISO = todayStart.toISOString();
 
-    const [{ data: allOrd }, { data: todayOrd }, { data: resv }] = await Promise.all([
+    const [{ data: allOrd }, { data: resv }] = await Promise.all([
       (supabase as any).from("orders").select("*, order_items(*)").order("created_at", { ascending: false }),
-      (supabase as any).from("orders").select("*, order_items(*)").gte("created_at", todayISO).order("created_at", { ascending: false }),
       (supabase as any).from("reservations").select("*").order("date", { ascending: true }).order("time", { ascending: true }),
     ]);
 
     if (allOrd) setAllOrders(allOrd as Order[]);
-    if (todayOrd) setTodayOrders(todayOrd as Order[]);
     if (resv) setReservations(resv as Reservation[]);
     setLastRefresh(new Date());
     setLoading(false);
@@ -429,17 +435,22 @@ function Dashboard() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Derived stats ────────────────────────────────────────────────────────────
+  // ── Derived stats (filtered by date range) ───────────────────────────────────
 
-  const completedToday = todayOrders.filter((o) => o.status !== "cancelled");
+  const rangeOrders = allOrders.filter((o) => {
+    const d = o.created_at.split("T")[0];
+    return d >= dateFrom && d <= dateTo;
+  });
+
+  const completedToday = rangeOrders.filter((o) => o.status !== "cancelled");
   const revenueToday = completedToday.reduce((s, o) => s + o.total, 0);
   const ordersToday = completedToday.length;
 
   const statusCounts: Record<string, number> = {};
-  for (const o of todayOrders) statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+  for (const o of rangeOrders) statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
 
   const paymentMap: Record<string, { count: number; revenue: number }> = {};
-  for (const o of allOrders.filter((o) => o.status !== "cancelled")) {
+  for (const o of rangeOrders.filter((o) => o.status !== "cancelled")) {
     const pm = o.payment_method || "cash";
     if (!paymentMap[pm]) paymentMap[pm] = { count: 0, revenue: 0 };
     paymentMap[pm].count++;
@@ -447,7 +458,7 @@ function Dashboard() {
   }
 
   const itemCount: Record<string, number> = {};
-  for (const o of allOrders) {
+  for (const o of rangeOrders) {
     for (const oi of o.order_items) {
       itemCount[oi.menu_item_name] = (itemCount[oi.menu_item_name] || 0) + oi.quantity;
     }
@@ -456,6 +467,9 @@ function Dashboard() {
 
   const now = new Date().toISOString().split("T")[0];
   const upcomingResv = reservations.filter((r) => r.date >= now && r.status !== "cancelled").slice(0, 5);
+
+  const isToday = dateFrom === todayStr && dateTo === todayStr;
+  const rangeLabel = isToday ? "Today" : dateFrom === dateTo ? dateFrom : `${dateFrom} → ${dateTo}`;
 
   const STATUS_COLORS_MAP: Record<string, string> = {
     new: "bg-red-500/20 text-red-400",
@@ -480,16 +494,47 @@ function Dashboard() {
   return (
     <div className="flex flex-col gap-8">
 
+      {/* ── Date range filter ── */}
+      <div className="border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-white/40">Date Range</p>
+          <div className="flex gap-2 flex-wrap">
+            {QUICK_RANGES.map((r) => (
+              <button key={r.label} onClick={() => { setDateFrom(r.from); setDateTo(r.to); }}
+                className={`px-3 py-1 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  dateFrom === r.from && dateTo === r.to
+                    ? "bg-brand-gold text-brand-black"
+                    : "border border-white/10 text-white/40 hover:text-white"
+                }`}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] text-white/30 uppercase tracking-widest">From</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="bg-white/5 border border-white/10 text-white text-sm px-3 py-1.5 focus:outline-none focus:border-brand-gold/50" />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] text-white/30 uppercase tracking-widest">To</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="bg-white/5 border border-white/10 text-white text-sm px-3 py-1.5 focus:outline-none focus:border-brand-gold/50" />
+          </div>
+        </div>
+      </div>
+
       {/* ── Daily P&L ── */}
       <DailyPLPanel revenue={revenueToday} ordersCount={ordersToday} />
 
       {/* ── KPI strip ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Revenue Today" value={`₹${revenueToday.toFixed(0)}`} sub="Excl. cancelled" accent icon={TrendingUp} />
-        <StatCard label="Orders Today" value={ordersToday} sub={`${todayOrders.filter((o) => o.status === "cancelled").length} cancelled`} icon={ShoppingBag} />
-        <StatCard label="Total Orders (All)" value={allOrders.filter((o) => o.status !== "cancelled").length} icon={BarChart2} />
+        <StatCard label={`Revenue (${rangeLabel})`} value={`₹${revenueToday.toFixed(0)}`} sub="Excl. cancelled" accent icon={TrendingUp} />
+        <StatCard label={`Orders (${rangeLabel})`} value={ordersToday} sub={`${rangeOrders.filter((o) => o.status === "cancelled").length} cancelled`} icon={ShoppingBag} />
+        <StatCard label="Total Orders (All Time)" value={allOrders.filter((o) => o.status !== "cancelled").length} icon={BarChart2} />
         <StatCard
-          label="Total Revenue (All)"
+          label="Total Revenue (All Time)"
           value={`₹${allOrders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0).toFixed(0)}`}
           icon={CreditCard}
         />
@@ -497,7 +542,7 @@ function Dashboard() {
 
       {/* ── Orders by status ── */}
       <div>
-        <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Orders by Status (Today)</h2>
+        <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Orders by Status ({rangeLabel})</h2>
         <div className="flex flex-wrap gap-3">
           {["new", "acknowledged", "preparing", "ready", "served", "cancelled"].map((s) => (
             <div key={s} className={`px-4 py-3 text-center min-w-[90px] border border-white/5 ${STATUS_COLORS_MAP[s] || "bg-white/5 text-white/40"}`}>
@@ -510,7 +555,7 @@ function Dashboard() {
 
       {/* ── Payment breakdown ── */}
       <div>
-        <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Payment Breakdown (All Time)</h2>
+        <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Payment Breakdown ({rangeLabel})</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {Object.entries(paymentMap).length === 0 && <p className="text-white/20 text-sm">No payment data yet.</p>}
           {Object.entries(paymentMap).map(([pm, stats]) => (
@@ -526,7 +571,7 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Top 5 items */}
         <div>
-          <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Top 5 Items (All Time)</h2>
+          <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Top 5 Items ({rangeLabel})</h2>
           <div className="flex flex-col gap-2">
             {topItems.length === 0 && <p className="text-white/20 text-sm">No order data yet.</p>}
             {topItems.map(([name, count], i) => {
@@ -571,7 +616,7 @@ function Dashboard() {
 
       {/* Recent orders */}
       <div>
-        <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Recent Orders</h2>
+        <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white/40 mb-3">Orders ({rangeLabel})</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
@@ -582,7 +627,7 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {allOrders.slice(0, 10).map((o) => (
+              {rangeOrders.slice(0, 50).map((o) => (
                 <tr key={o.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                   <td className="py-3 pr-4 text-white font-medium">T{o.table_number}</td>
                   <td className="py-3 pr-4 text-white/50">
