@@ -8,6 +8,7 @@ import { useTheme } from "@/lib/ThemeContext";
 
 const NAV_LINKS = [
   { label: "Menu", href: "/menu" },
+  { label: "Happy Hour", href: "/happyhour" },
   { label: "About", href: "/about" },
   { label: "Find Us", href: "/contact" },
 ];
