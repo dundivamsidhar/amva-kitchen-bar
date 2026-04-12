@@ -15,10 +15,10 @@ export default function AboutStrip() {
   const subColor = isDark ? "rgba(255,255,255,0.25)" : "rgba(28,20,7,0.30)";
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 min-h-[85vh]">
+    <section className="grid grid-cols-1 lg:grid-cols-2">
 
       {/* Image — full bleed */}
-      <div className="relative h-[55vw] lg:h-auto order-2 lg:order-1 overflow-hidden">
+      <div className="relative h-[45vw] lg:h-auto order-2 lg:order-1 overflow-hidden" style={{ minHeight: "320px", maxHeight: "520px" }}>
         <Image
           src="https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=1200&q=85"
           alt="AmVa Kitchen & Bar interior"
@@ -43,7 +43,7 @@ export default function AboutStrip() {
 
       {/* Text panel */}
       <div
-        className="order-1 lg:order-2 flex items-center px-8 md:px-14 lg:px-16 py-20 lg:py-28"
+        className="order-1 lg:order-2 flex items-center px-8 md:px-12 lg:px-14 py-12 lg:py-16"
         style={{ background: bg }}
       >
         <div className="w-full max-w-lg">
@@ -54,7 +54,7 @@ export default function AboutStrip() {
 
           <h2
             className="font-display font-black leading-none mb-8"
-            style={{ fontSize: "clamp(3rem, 5.5vw, 5.5rem)", color: headingColor }}
+            style={{ fontSize: "clamp(2rem, 4vw, 3.8rem)", color: headingColor }}
           >
             HYDERABAD&apos;S
             <br />
