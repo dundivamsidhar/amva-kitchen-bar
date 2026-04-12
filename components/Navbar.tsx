@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, ShoppingBag } from "lucide-react";
+import { Menu, X, ShoppingBag, Sun, Moon } from "lucide-react";
 import { useCart } from "@/lib/CartContext";
+import { useTheme } from "@/lib/ThemeContext";
 
 const NAV_LINKS = [
   { label: "Menu", href: "/menu" },
@@ -15,6 +16,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { count } = useCart();
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -55,6 +57,14 @@ export default function Navbar() {
 
         {/* Desktop right */}
         <div className="hidden md:flex items-center gap-5">
+          {/* Theme toggle */}
+          <button
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="w-9 h-9 flex items-center justify-center border border-white/10 text-white/40 hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           <Link
             href="/order"
             className="relative text-white/40 hover:text-white transition-colors duration-300"
@@ -77,6 +87,13 @@ export default function Navbar() {
 
         {/* Mobile right */}
         <div className="md:hidden flex items-center gap-5">
+          <button
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="text-white/50 hover:text-brand-gold transition-colors"
+          >
+            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
           <Link href="/order" className="relative text-white/50" aria-label="Cart">
             <ShoppingBag className="w-5 h-5" />
             {count > 0 && (
