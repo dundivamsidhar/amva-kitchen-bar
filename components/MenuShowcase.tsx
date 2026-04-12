@@ -225,8 +225,8 @@ export default function MenuShowcase() {
         {/* Sub */}
         <p
           className="mt-4 font-light tracking-[0.25em] uppercase text-sm md:text-base"
-          style={{ color: isDark ? "rgba(255,255,255,0.50)" : "rgba(28,20,7,0.55)" }}
           style={{
+            color: isDark ? "rgba(255,255,255,0.50)" : "rgba(28,20,7,0.55)",
             opacity: visible ? 1 : 0,
             transform: visible ? "translateX(0)" : "translateX(-24px)",
             transition: "all 0.5s ease 0.35s",

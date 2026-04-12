@@ -86,7 +86,7 @@ export default function Hero() {
         </div>
 
         {/* Info strip */}
-        <div className="border-t border-white/8 pt-7 flex flex-wrap gap-8 md:gap-16">
+        <div className="border-t border-white/10 pt-7 flex flex-wrap gap-8 md:gap-16">
           {[
             { label: "Open", value: "Mon–Sun, 12pm – 1am" },
             { label: "Location", value: "Jubilee Hills, Hyderabad" },

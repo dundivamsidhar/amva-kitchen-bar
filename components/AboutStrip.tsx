@@ -59,7 +59,7 @@ export default function AboutStrip() {
           </p>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 border-t border-white/8 pt-8 mb-10">
+          <div className="grid grid-cols-3 gap-6 border-t border-white/10 pt-8 mb-10">
             {[
               { num: "120+", label: "Dishes" },
               { num: "40+", label: "Cocktails" },

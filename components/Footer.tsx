@@ -35,7 +35,7 @@ export default function Footer() {
                 <a
                   key={i}
                   href="#"
-                  className="w-9 h-9 border border-white/8 flex items-center justify-center text-white/25 hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
+                  className="w-9 h-9 border border-white/10 flex items-center justify-center text-white/25 hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
                   aria-label="Social"
                 >
                   <Icon className="w-4 h-4" />
@@ -117,7 +117,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-white/5 py-7 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-white/18 text-xs">
+          <p className="text-white/20 text-xs">
             © {new Date().getFullYear()} AmVa Kitchen & Bar. All rights reserved. Hyderabad, India.
           </p>
           <div className="flex gap-6">
@@ -125,7 +125,7 @@ export default function Footer() {
               <Link
                 key={label}
                 href="#"
-                className="text-white/18 text-xs hover:text-white/40 transition-colors"
+                className="text-white/20 text-xs hover:text-white/40 transition-colors"
               >
                 {label}
               </Link>

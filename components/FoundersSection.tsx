@@ -110,7 +110,7 @@ export default function FoundersSection() {
                 <p className="text-white/45 text-sm leading-relaxed italic mb-5">
                   &ldquo;{f.quote}&rdquo;
                 </p>
-                <p className="text-white/22 text-xs leading-relaxed">
+                <p className="text-white/20 text-xs leading-relaxed">
                   {f.detail}
                 </p>
               </div>
