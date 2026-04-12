@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTheme } from "@/lib/ThemeContext";
 
 const COCKTAILS = [
   {
@@ -24,8 +27,11 @@ const COCKTAILS = [
 ];
 
 export default function CocktailBanner() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <section className="relative overflow-hidden bg-[#0A0806]">
+    <section className="relative overflow-hidden" style={{ background: isDark ? "#0A0806" : "#1a0e06" }}>
 
       {/* Full-bleed background */}
       <div
@@ -34,7 +40,8 @@ export default function CocktailBanner() {
           backgroundImage: `url('https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=1800&q=80')`,
         }}
       />
-      <div className="absolute inset-0 bg-[#0A0806]/88" />
+      {/* Always keep dark overlay here — bar section looks better dark in both modes */}
+      <div className="absolute inset-0" style={{ background: isDark ? "rgba(10,8,6,0.88)" : "rgba(10,5,2,0.82)" }} />
 
       <div className="relative z-10 max-w-screen-xl mx-auto px-6 md:px-12 py-24 md:py-32">
 
